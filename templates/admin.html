@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Administration{% endblock %}
+{% block title %}Prime Minister{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>Administration</h1>
-  <p>System overview and staff account management.</p>
+  <h1>Prime Minister Dashboard</h1>
+  <p>System overview and government account management.</p>
   <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
     <div class="card" style="flex:1;min-width:180px;margin:0;text-align:center;">
       <strong style="font-size:1.8rem;color:var(--primary);">{{ report_count }}</strong>
@@ -11,13 +11,13 @@
     </div>
     <div class="card" style="flex:1;min-width:180px;margin:0;text-align:center;">
       <strong style="font-size:1.8rem;color:var(--primary);">{{ users|length }}</strong>
-      <p style="margin:0;">User accounts</p>
+      <p style="margin:0;">Government accounts</p>
     </div>
   </div>
 </div>
 
 <div class="card">
-  <h2>Create staff account</h2>
+  <h2>Create government account</h2>
   <form method="post">
     <input type="hidden" name="action" value="create">
     <label for="display_name">Display name</label>
@@ -29,8 +29,8 @@
     <label for="new_role">Role</label>
     <select id="new_role" name="role" required>
       <option value="">Select role</option>
-      <option value="partner">Partner</option>
-      <option value="admin">Admin</option>
+      <option value="partner">Minister</option>
+      <option value="admin">Prime Minister</option>
     </select>
     <button type="submit" class="btn">Create account</button>
   </form>
@@ -47,7 +47,7 @@
         <tr>
           <td>{{ user.display_name or "—" }}</td>
           <td>{{ user.username }}</td>
-          <td><span class="badge" style="background:#eef5ef;color:#1a5f2a;">{{ user.role|capitalize }}</span></td>
+          <td><span class="badge" style="background:#eef5ef;color:#1a5f2a;">{{ role_labels.get(user.role, user.role|capitalize) }}</span></td>
           <td>
             {% if user.username != "admin" %}
             <form method="post" onsubmit="return confirm('Delete this account?');">

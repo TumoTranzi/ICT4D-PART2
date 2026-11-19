@@ -3,7 +3,7 @@
 {% block content %}
 <div class="card" style="max-width:480px;margin:0 auto;">
   <h1>Sign in</h1>
-  <p>Citizen reporting is public and needs no login. Partner and administrator areas require a staff account.</p>
+  <p>Citizens can submit reports without signing in. Minister and Prime Minister accounts are for government staff.</p>
   <form method="post">
     <label for="username">Username</label>
     <div class="field-with-icon">
@@ -21,14 +21,16 @@
   </form>
 </div>
 
+{% if show_demo_accounts %}
 <div class="card" style="max-width:480px;margin:1rem auto;">
   <h2>Demo accounts</h2>
   <table>
     <thead><tr><th>Role</th><th>Username</th><th>Password</th></tr></thead>
     <tbody>
-      <tr><td>Partner</td><td>partner</td><td>partner123</td></tr>
-      <tr><td>Admin</td><td>admin</td><td>admin123</td></tr>
+      <tr><td>Minister</td><td>partner</td><td>partner123</td></tr>
+      <tr><td>Prime Minister</td><td>admin</td><td>admin123</td></tr>
     </tbody>
   </table>
 </div>
+{% endif %}
 {% endblock %}

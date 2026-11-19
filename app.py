@@ -45,6 +45,7 @@ app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 app.register_blueprint(ussd_bp)
 
 ROLES = ("citizen", "partner", "admin")
+ROLE_LABELS = {"citizen": "Citizen", "partner": "Minister", "admin": "Prime Minister"}
 
 
 def current_role():
@@ -120,8 +121,8 @@ def init_db():
         c.execute("ALTER TABLE users ADD COLUMN display_name TEXT")
 
     default_users = (
-        ("partner", os.environ.get("TSEBISA_PARTNER_PASSWORD") or (None if IS_PRODUCTION else "partner123"), "partner", "Community Partner"),
-        ("admin", os.environ.get("TSEBISA_ADMIN_PASSWORD") or (None if IS_PRODUCTION else "admin123"), "admin", "System Administrator"),
+        ("partner", os.environ.get("TSEBISA_PARTNER_PASSWORD") or (None if IS_PRODUCTION else "partner123"), "partner", "Minister"),
+        ("admin", os.environ.get("TSEBISA_ADMIN_PASSWORD") or (None if IS_PRODUCTION else "admin123"), "admin", "Prime Minister"),
     )
     c.execute("DELETE FROM users WHERE role=?", ("citizen",))
     for username, password, role, display_name in default_users:
@@ -132,6 +133,8 @@ def init_db():
                 "INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)",
                 (username, generate_password_hash(password), role, display_name),
             )
+    c.execute("UPDATE users SET display_name='Prime Minister' WHERE username='admin' AND display_name='System Administrator'")
+    c.execute("UPDATE users SET display_name='Minister' WHERE username='partner' AND display_name='Community Partner'")
     conn.commit()
     conn.close()
 
@@ -194,7 +197,7 @@ def login():
                 return redirect(url_for("dashboard"))
             return redirect(url_for("home"))
         flash("Incorrect username or password.", "error")
-    return render_template("login.html")
+    return render_template("login.html", show_demo_accounts=not IS_PRODUCTION)
 
 
 @app.route("/logout")
@@ -398,6 +401,7 @@ def admin_panel():
         users=users,
         report_count=report_count,
         roles=ROLES,
+        role_labels=ROLE_LABELS,
     )
 
 @app.route("/guide")

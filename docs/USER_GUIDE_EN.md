@@ -1,4 +1,4 @@
-# Tsebisa – Short User Guide (English)
+# Tsebisa – Citizen Guide (English)
 
 ## For Community Members
 
@@ -21,7 +21,7 @@ Tsebisa is a simple way to tell the local office about problems with water, road
 
 ---
 
-## For the Partner Organisation
+## For Ministers
 
 1. Open the **Dashboard**.
 2. You will see a list of reports with reference numbers, category, location and status.

@@ -270,7 +270,7 @@
       <a href="/dashboard" {% if request.path.startswith('/dashboard') %}aria-current="page"{% endif %}>Dashboard</a>
       {% endif %}
       {% if session.get("role") == "admin" %}
-      <a href="/admin" {% if request.path.startswith('/admin') %}aria-current="page"{% endif %}>Admin</a>
+      <a href="/admin" {% if request.path.startswith('/admin') %}aria-current="page"{% endif %}>Prime Minister</a>
       {% endif %}
       <a href="/guide" {% if request.path == '/guide' %}aria-current="page"{% endif %}>Guide</a>
       <a href="/ussd-simulator" {% if request.path == '/ussd-simulator' %}aria-current="page"{% endif %}>
@@ -282,7 +282,7 @@
       {% if session.get("role") %}
       <a href="/logout">Sign out ({{ session.get("username") }})</a>
       {% else %}
-      <a href="/login">Partner / Admin Login</a>
+      <a href="/login">Minister / Prime Minister Login</a>
       {% endif %}
     </nav>
   </header>

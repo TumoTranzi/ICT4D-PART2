@@ -17,6 +17,6 @@ Render documents these limits in its [free-plan guide](https://render.com/docs/f
 2. In Render, select **New → Blueprint** and connect that repository. The Blueprint file is `render.yaml` at the repository root.
 3. Provide a unique value for `TSEBISA_ADMIN_PASSWORD`. Render generates `TSEBISA_SECRET_KEY`.
 4. Confirm the web service plan is **Free**, and do not add a disk or select a paid plan.
-5. Deploy. Open the `onrender.com` URL on the service page. The simulator is at `/ussd-simulator`; staff sign in at `/login` with username `admin` and the password entered during setup.
+5. Deploy. Open the `onrender.com` URL on the service page. The simulator is at `/ussd-simulator`; the Prime Minister account signs in at `/login` with username `admin` and the password entered during setup. Create Minister accounts from the Prime Minister dashboard at `/admin`.
 
 If Render still asks for payment details, cancel that flow. Confirm the latest commit on GitHub includes `plan: free` in `render.yaml`, then create or sync the Blueprint again.
