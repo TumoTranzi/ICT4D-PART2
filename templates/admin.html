@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Administration{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Administration</h1>
+  <p>System overview and staff account management.</p>
+  <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+    <div class="card" style="flex:1;min-width:180px;margin:0;text-align:center;">
+      <strong style="font-size:1.8rem;color:var(--primary);">{{ report_count }}</strong>
+      <p style="margin:0;">Community reports</p>
+    </div>
+    <div class="card" style="flex:1;min-width:180px;margin:0;text-align:center;">
+      <strong style="font-size:1.8rem;color:var(--primary);">{{ users|length }}</strong>
+      <p style="margin:0;">User accounts</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Create staff account</h2>
+  <form method="post">
+    <input type="hidden" name="action" value="create">
+    <label for="display_name">Display name</label>
+    <input id="display_name" name="display_name" type="text" maxlength="80" required>
+    <label for="new_username">Username</label>
+    <input id="new_username" name="username" type="text" maxlength="40" required>
+    <label for="new_password">Password</label>
+    <input id="new_password" name="password" type="password" minlength="8" required>
+    <label for="new_role">Role</label>
+    <select id="new_role" name="role" required>
+      <option value="">Select role</option>
+      <option value="partner">Partner</option>
+      <option value="admin">Admin</option>
+    </select>
+    <button type="submit" class="btn">Create account</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Accounts</h2>
+  {% if users %}
+  <div style="overflow-x:auto;">
+    <table>
+      <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.display_name or "—" }}</td>
+          <td>{{ user.username }}</td>
+          <td><span class="badge" style="background:#eef5ef;color:#1a5f2a;">{{ user.role|capitalize }}</span></td>
+          <td>
+            {% if user.username != "admin" %}
+            <form method="post" onsubmit="return confirm('Delete this account?');">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="user_id" value="{{ user.id }}">
+              <button type="submit" class="btn btn-outline" style="padding:0.35rem 0.65rem;font-size:0.8rem;">Delete</button>
+            </form>
+            {% else %}Protected{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p>No accounts found.</p>
+  {% endif %}
+</div>
+{% endblock %}

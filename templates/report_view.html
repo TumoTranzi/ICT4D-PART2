@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Report {{ report.reference }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{{ report.reference }}</h1>
+  <p style="margin-bottom:1.25rem;">
+    <span class="badge badge-{{ report.status }}">{{ status_labels[report.status]["en"] }}</span>
+  </p>
+
+  <table>
+    <tr><th style="width:140px;">Category</th><td>{{ categories[report.category]["en"] if report.category in categories else report.category }}</td></tr>
+    <tr><th>Description</th><td>{{ report.description or "—" }}</td></tr>
+    <tr><th>Location</th><td>{{ report.location or "—" }}</td></tr>
+    <tr><th>Phone</th><td>{{ report.phone or "—" }}</td></tr>
+    <tr><th>Language</th><td>{{ "Sesotho" if report.language=="st" else "English" }}</td></tr>
+    {% if report.voice_note %}
+    <tr>
+      <th>Voice note</th>
+      <td>
+        <audio controls preload="metadata" style="width:100%;max-width:420px;">
+          <source src="{{ url_for('voice_note', filename=report.voice_note) }}">
+          Your browser does not support audio playback.
+        </audio>
+      </td>
+    </tr>
+    {% endif %}
+    {% if report.photo %}
+    <tr>
+      <th>Photo</th>
+      <td>
+        <a href="{{ url_for('report_photo', filename=report.photo) }}" target="_blank" rel="noopener">
+          <img src="{{ url_for('report_photo', filename=report.photo) }}"
+            alt="Problem photo"
+            style="display:block;width:100%;max-width:420px;max-height:300px;object-fit:cover;border-radius:10px;border:1px solid var(--border);">
+        </a>
+      </td>
+    </tr>
+    {% endif %}
+    <tr><th>Submitted</th><td>{{ report.created_at }}</td></tr>
+    <tr><th>Last update</th><td>{{ report.updated_at or "—" }}</td></tr>
+  </table>
+
+  <form method="post" action="{{ url_for('update_status', reference=report.reference) }}" style="margin-top:1.5rem;">
+    <input type="hidden" name="current_filter" value="{{ current_filter }}">
+    <label>Update status</label>
+    <select name="status">
+      <option value="received" {% if report.status=='received' %}selected{% endif %}>Received</option>
+      <option value="in_progress" {% if report.status=='in_progress' %}selected{% endif %}>In progress</option>
+      <option value="closed" {% if report.status=='closed' %}selected{% endif %}>Closed</option>
+    </select>
+    <button type="submit" class="btn">Save Status</button>
+  </form>
+
+  <a href="{{ url_for('dashboard', status=current_filter) }}" class="btn btn-outline" style="margin-top:1rem;">← Back to Dashboard</a>
+</div>
+{% endblock %}

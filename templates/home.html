@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Tsebisa</h1>
+  <p style="font-size:1.05rem;color:#333;">
+    <strong>Community Service Delivery Reporting</strong> for Lesotho.
+    Report problems with water, roads, refuse and more — simply, in Sesotho, from any phone.
+  </p>
+  <p>
+    This pilot prototype simulates a USSD/SMS reporting channel designed for feature phones
+    and low-connectivity areas. Citizens get an immediate reference number; the partner
+    organisation sees reports on a simple dashboard.
+  </p>
+  <a href="/report" class="btn btn-block">Start a Report (Citizen)</a>
+  <a href="/dashboard" class="btn btn-outline btn-block" style="margin-top:0.6rem;">Partner Dashboard</a>
+  <a href="/guide" class="btn btn-outline btn-block" style="margin-top:0.6rem;">User Guide (EN / ST)</a>
+</div>
+
+<div class="card">
+  <h2>How it works (pilot)</h2>
+  <div class="ussd-box">*123#
+1. Khetha puo / Choose language
+2. Khetha bothata / Choose problem type
+3. Hlalosa + sebaka / Describe + location
+4. Fumana nomoro ea reference
+   → Confirmation shown on screen</div>
+  <p style="margin-top:0.75rem;font-size:0.9rem;">
+    In a full deployment this flow runs over real USSD. For the student pilot we use a
+    mobile-friendly web simulation that follows the same simple steps.
+  </p>
+</div>
+{% endblock %}

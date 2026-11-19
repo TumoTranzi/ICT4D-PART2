@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Language{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="step-indicator">
+    <span class="active"></span><span></span><span></span>
+  </div>
+  <h1>Khetha Puo / Choose Language</h1>
+  <p>Select the language for the reporting menu.</p>
+  <form method="post">
+    <div class="lang-switch">
+      <label>
+        <input type="radio" name="lang" value="st" checked>
+        Sesotho
+      </label>
+      <label>
+        <input type="radio" name="lang" value="en">
+        English
+      </label>
+    </div>
+    <button type="submit" class="btn btn-block">Continue →</button>
+  </form>
+</div>
+{% endblock %}

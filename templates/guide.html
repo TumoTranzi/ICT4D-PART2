@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}User Guide{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>User Guide / Tataiso ea Mosebelisi</h1>
+  <p>Short guide for citizens and for the partner organisation.</p>
+</div>
+
+<div class="card">
+  <h2>For Citizens (English)</h2>
+  <ol style="padding-left:1.25rem;color:var(--muted);">
+    <li style="margin-bottom:0.5rem;">Go to the Tsebisa reporting page (or dial the USSD code in a full deployment).</li>
+    <li style="margin-bottom:0.5rem;">Choose your language (Sesotho or English).</li>
+    <li style="margin-bottom:0.5rem;">Select the type of problem (water, roads, refuse, street lights, or other).</li>
+    <li style="margin-bottom:0.5rem;">Write a short description and the location/village.</li>
+    <li style="margin-bottom:0.5rem;">Enter your phone number so you can receive a confirmation.</li>
+    <li style="margin-bottom:0.5rem;">Submit. You will receive a reference number (e.g. TSE-7K2M). Keep it.</li>
+  </ol>
+  <p><strong>Important:</strong> Reporting does not guarantee immediate repair. It makes the problem visible to the responsible office.</p>
+</div>
+
+<div class="card">
+  <h2>Bakeng sa Baahi (Sesotho)</h2>
+  <ol style="padding-left:1.25rem;color:var(--muted);">
+    <li style="margin-bottom:0.5rem;">E-ea leqepheng la Tsebisa (kapa o letse khoutu ea USSD ha e se e le teng).</li>
+    <li style="margin-bottom:0.5rem;">Khetha puo (Sesotho kapa Senyesemane).</li>
+    <li style="margin-bottom:0.5rem;">Khetha mofuta oa bothata (metsi, litsela, lithoto, mabone, kapa tse ding).</li>
+    <li style="margin-bottom:0.5rem;">Ngola tlhaloso e khutšoane le sebaka/motse.</li>
+    <li style="margin-bottom:0.5rem;">Kenya nomoro ea hau ea mohala hore u fumane SMS.</li>
+    <li style="margin-bottom:0.5rem;">Romela. U tla fumana nomoro ea reference (mohlala TSE-7K2M). E boloke.</li>
+  </ol>
+  <p><strong>Hlokomela:</strong> Ho tlaleha ha ho tiise hore bothata bo tla lokisoa hang-hang. E thusa hore ofisi e e ikarabellang e bone bothata.</p>
+</div>
+
+<div class="card">
+  <h2>For the Partner Organisation</h2>
+  <ul style="padding-left:1.25rem;color:var(--muted);">
+    <li style="margin-bottom:0.5rem;">Open the Dashboard to see all incoming reports.</li>
+    <li style="margin-bottom:0.5rem;">Click a reference number to see full details.</li>
+    <li style="margin-bottom:0.5rem;">Update the status: Received → In progress → Closed.</li>
+    <li style="margin-bottom:0.5rem;">In a full system an SMS can be sent back to the citizen when status changes.</li>
+    <li style="margin-bottom:0.5rem;">Use the reports to prioritise work and to show the community that their voice is heard.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>Technical Notes (for handover)</h2>
+  <ul style="padding-left:1.25rem;color:var(--muted);font-size:0.95rem;">
+    <li style="margin-bottom:0.4rem;">This pilot uses a web simulation of the USSD flow + SQLite database.</li>
+    <li style="margin-bottom:0.4rem;">To connect a real USSD/SMS gateway (e.g. Africa’s Talking), use the <code>/api/ussd</code> endpoint and adapt the session handling.</li>
+    <li style="margin-bottom:0.4rem;">Source code is kept simple so a local technician or student can maintain it.</li>
+    <li style="margin-bottom:0.4rem;">Data is stored locally in <code>tsebisa.db</code>. Back it up regularly.</li>
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Success{% endblock %}
+{% block content %}
+<div class="card" style="text-align:center;">
+  {% if lang == "st" %}
+    <h1>Tlaleho e rometsoe!</h1>
+    <p>Tlaleho ea hau e amohetsoe. Boloka nomoro ena:</p>
+  {% else %}
+    <h1>Report Submitted!</h1>
+    <p>Your report has been received. Please keep this reference number:</p>
+  {% endif %}
+
+  <div class="ref-box">
+    <div class="ref">{{ ref }}</div>
+  </div>
+
+  {% if lang == "st" %}
+    <p>U tla fumana SMS e tiisang. Sebelisa nomoro ena ha u botsa ka tsoelo-pele.</p>
+  {% else %}
+    <p>You will receive an SMS confirmation. Use this number if you ask about progress.</p>
+  {% endif %}
+
+  <a href="/" class="btn" style="margin-top:1rem;">
+    {% if lang == "st" %}Khutlela qalong{% else %}Back to Home{% endif %}
+  </a>
+</div>
+{% endblock %}

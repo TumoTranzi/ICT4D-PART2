@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Tsebisa{% endblock %} – Community Reporting</title>
+  <style>
+    :root {
+      --primary: #176b3a;
+      --primary-dark: #0b4424;
+      --accent: #e6a817;
+      --accent-soft: #fff4cf;
+      --bg: #f3f6f3;
+      --card: #ffffff;
+      --text: #17211a;
+      --muted: #66736a;
+      --border: #dde4de;
+      --success: #0d7a3f;
+      --danger: #b91c1c;
+      --shadow: 0 12px 30px rgba(24, 58, 35, 0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(230, 168, 23, 0.08), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .app-layout { min-height: 100vh; display: flex; }
+    header {
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--text);
+      width: 212px;
+      flex: 0 0 212px;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      align-self: flex-start;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      border-right: 1px solid var(--border);
+      box-shadow: 8px 0 28px rgba(24, 58, 35, 0.05);
+      padding: 1.1rem 0;
+    }
+    header a { color: var(--text); text-decoration: none; font-weight: 600; }
+    header nav { width: 100%; margin-top: 1.25rem; }
+    header nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.78rem 1.1rem;
+      border-radius: 0 9px 9px 0;
+      transition: background 0.16s, border-color 0.16s, color 0.16s;
+      border-left: 3px solid transparent;
+      font-weight: 400;
+      opacity: 1;
+      font-size: 0.95rem;
+    }
+    header nav a:hover, header nav a[aria-current="page"] {
+      background: #edf4ef;
+      color: var(--primary-dark);
+      border-left-color: var(--primary);
+      text-decoration: none;
+    }
+    .logo { display: block; padding: 0 1.1rem; font-size: 1.75rem; letter-spacing: 0.5px; color: var(--primary-dark); font-weight: 800; }
+    .logo span { color: var(--accent); }
+    .page-shell { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+    main { width: 100%; max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 3.5rem; flex: 1; }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 1.65rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 1.25rem;
+    }
+    h1 { font-size: clamp(1.55rem, 3vw, 2rem); margin-bottom: 0.65rem; color: var(--primary-dark); line-height: 1.2; }
+    h2 { font-size: 1.25rem; margin-bottom: 0.75rem; color: var(--primary); }
+    p { margin-bottom: 0.85rem; color: var(--muted); }
+    .btn {
+      display: inline-block;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.78rem 1.45rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 5px 14px rgba(23, 107, 58, 0.16);
+    }
+    .btn:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 7px 18px rgba(23, 107, 58, 0.22); }
+    .btn:active { transform: translateY(0); }
+    .btn:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(230, 168, 23, 0.55);
+      outline-offset: 2px;
+    }
+    .btn-block { display: block; width: 100%; margin-top: 0.5rem; }
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    .btn-outline:hover { background: var(--primary); color: white; }
+    .btn-accent { background: var(--accent); color: #1a1a1a; }
+    .btn-accent:hover { background: #d9a017; }
+    label { display: block; font-weight: 600; margin-bottom: 0.35rem; font-size: 0.95rem; }
+    select, input[type="text"], input[type="tel"], input[type="password"], textarea {
+      width: 100%;
+      min-height: 48px;
+      padding: 0.72rem 0.85rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      background: white;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    select:focus, input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(26,95,42,0.15);
+    }
+    .ussd-box {
+      background: #0f172a;
+      color: #4ade80;
+      font-family: "Courier New", monospace;
+      padding: 1.25rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin: 1rem 0;
+      white-space: pre-wrap;
+    }
+    .ref-box {
+      background: #ecfdf5;
+      border: 2px solid var(--success);
+      border-radius: 10px;
+      padding: 1.25rem;
+      text-align: center;
+      margin: 1.25rem 0;
+    }
+    .ref-box .ref {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--success);
+      letter-spacing: 2px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 0.65rem 0.5rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #f0f4f0; font-weight: 600; color: var(--primary-dark); }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-received { background: #dbeafe; color: #1e40af; }
+    .badge-in_progress { background: #fef3c7; color: #92400e; }
+    .badge-closed { background: #d1fae5; color: #065f46; }
+    .flash { padding: 0.85rem 1rem; border-radius: 10px; margin-bottom: 1rem; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; box-shadow: 0 5px 15px rgba(6,95,70,0.08); }
+    .flash-error { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .lang-switch { display: flex; gap: 0.75rem; margin: 1rem 0; }
+    .lang-switch label {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.85rem;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .lang-switch input { width: auto; margin: 0; }
+    .lang-switch label:has(input:checked) {
+      border-color: var(--primary);
+      background: #ecfdf5;
+    }
+    .step-indicator {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 1.25rem;
+    }
+    .step-indicator span {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+    }
+    .step-indicator span.active { background: var(--primary); }
+    .choice-card {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 0.65rem;
+      cursor: pointer;
+      background: #fff;
+      transition: border-color 0.15s, background 0.15s, transform 0.15s;
+    }
+    .choice-card:hover { border-color: #91b89a; background: #f7fbf8; transform: translateY(-1px); }
+    .choice-card:has(input:checked) { border-color: var(--primary); background: #ecfdf5; }
+    .choice-card input { width: auto; margin: 0; accent-color: var(--primary); }
+    .choice-icon {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #eef5ef;
+      color: var(--primary);
+    }
+    .choice-icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .choice-arrow { width: 20px; height: 20px; margin-left: auto; fill: none; stroke: #778278; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .field-with-icon { position: relative; width: 100%; }
+    .field-with-icon svg { position:absolute;left:0.75rem;top:0.72rem;width:20px;height:20px;fill:none;stroke:#718176;stroke-width:2;pointer-events:none; z-index:1; }
+    .field-with-icon input {
+      width: 100%;
+      min-height: 48px;
+      margin-bottom: 1rem;
+      padding-left: 2.35rem;
+    }
+    @media (max-width: 650px) {
+      .app-layout { display: block; }
+      header { width: 100%; height: auto; position: static; padding: 0.75rem 0; border-right: 0; border-bottom: 1px solid var(--border); }
+      .logo { padding: 0 1rem; font-size: 1.35rem; }
+      header nav { display: flex; overflow-x: auto; margin-top: 0.45rem; }
+      header nav a { flex: 0 0 auto; padding: 0.55rem 0.8rem; border-left: 0; border-bottom: 3px solid transparent; }
+      header nav a:hover, header nav a[aria-current="page"] { border-left-color: transparent; border-bottom-color: var(--primary); }
+      main { padding: 1.15rem 0.75rem 2.5rem; }
+      .card { border-radius: 14px; padding: 1.15rem; }
+      .lang-switch { gap: 0.5rem; }
+      table { min-width: 640px; }
+      .btn { min-height: 46px; }
+    }
+    @media (max-width: 500px) {
+      main { padding: 1rem 0.75rem 2rem; }
+      .card { padding: 1.15rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <header>
+    <a href="/" class="logo">Tse<span>bisa</span></a>
+    <nav aria-label="Main navigation">
+      <a href="/report" {% if request.path.startswith('/report') %}aria-current="page"{% endif %}>Report</a>
+      {% if session.get("role") in ("partner", "admin") %}
+      <a href="/dashboard" {% if request.path.startswith('/dashboard') %}aria-current="page"{% endif %}>Dashboard</a>
+      {% endif %}
+      {% if session.get("role") == "admin" %}
+      <a href="/admin" {% if request.path.startswith('/admin') %}aria-current="page"{% endif %}>Admin</a>
+      {% endif %}
+      <a href="/guide" {% if request.path == '/guide' %}aria-current="page"{% endif %}>Guide</a>
+      <a href="/ussd-simulator" {% if request.path == '/ussd-simulator' %}aria-current="page"{% endif %}>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="2" width="12" height="20" rx="2"></rect><path d="M11 18h2"></path>
+        </svg>
+        Phone
+      </a>
+      {% if session.get("role") %}
+      <a href="/logout">Sign out ({{ session.get("username") }})</a>
+      {% else %}
+      <a href="/login">Partner / Admin Login</a>
+      {% endif %}
+    </nav>
+  </header>
+  <div class="page-shell">
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {% if category == 'error' %}flash-error{% endif %}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer>
+    Tsebisa Pilot • DIIC3110 ICT4D • Limkokwing University • 2026<br>
+    Built for Lesotho communities – feature-phone friendly
+  </footer>
+  </div>
+</div>
+</body>
+</html>

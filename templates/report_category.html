@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Category{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="step-indicator">
+    <span class="active"></span><span class="active"></span><span></span>
+  </div>
+  {% if lang == "st" %}
+    <h1>Khetha Bothata</h1>
+    <p>Bothata ke bofe boo u batlang ho bo tlaleha?</p>
+  {% else %}
+    <h1>Choose Problem Type</h1>
+    <p>What kind of problem do you want to report?</p>
+  {% endif %}
+  <form method="post">
+    {% for key, labels in categories.items() %}
+      <label class="choice-card">
+        <input type="radio" name="category" value="{{ key }}" required>
+        <span class="choice-icon" aria-hidden="true">
+          {% if category_icons[key] == "drop" %}
+            <svg viewBox="0 0 24 24"><path d="M12 2S5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13Z"></path><path d="M8.5 16.5c1 2 3.5 2.5 5.5 1"></path></svg>
+          {% elif category_icons[key] == "road" %}
+            <svg viewBox="0 0 24 24"><path d="M8 3 5 21M16 3l3 18M12 4v3M12 10v4M12 17v4"></path></svg>
+          {% elif category_icons[key] == "trash" %}
+            <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V3h8v3M6 6l1 15h10l1-15M10 10v7M14 10v7"></path></svg>
+          {% elif category_icons[key] == "bulb" %}
+            <svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M8.5 15.5A7 7 0 1 1 15.5 15.5c-.9.7-1.5 1.5-1.5 2.5h-4c0-1-.6-1.8-1.5-2.5Z"></path></svg>
+          {% else %}
+            <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg>
+          {% endif %}
+        </span>
+        <span>{{ labels[lang] }}</span>
+        <svg class="choice-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg>
+      </label>
+    {% endfor %}
+    <button type="submit" class="btn btn-block" style="margin-top:1rem;">
+      {% if lang == "st" %}Tsoela pele →{% else %}Continue →{% endif %}
+    </button>
+  </form>
+</div>
+{% endblock %}

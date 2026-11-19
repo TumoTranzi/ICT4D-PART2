@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.py[cod]
+tsebisa.db
+*.sqlite3
+.env
+uploads/
+static/voice_notes/
+static/report_photos/

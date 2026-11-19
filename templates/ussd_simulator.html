@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Button-Phone USSD Simulator{% endblock %}
+{% block content %}
+<style>
+  .sim-wrap{display:grid;grid-template-columns:minmax(250px,340px) minmax(0,1fr);gap:1.25rem;align-items:start}
+  .feature-phone{background:#20262d;border:5px solid #101418;border-radius:34px;padding:16px 14px 18px;max-width:340px;width:100%;margin:0 auto;box-shadow:0 12px 28px rgba(0,0,0,.2)}
+  .phone-brand{text-align:center;color:#cbd5e1;font-size:.75rem;letter-spacing:2px;margin:0 0 12px}
+  .phone-screen{background:#c7dfb7;border:5px solid #59634f;border-radius:8px;min-height:245px;padding:12px;color:#152414;font-family:monospace;display:flex;flex-direction:column;gap:9px}
+  .screen-top{display:flex;justify-content:space-between;font-size:.7rem;font-weight:bold;border-bottom:1px solid #8ca27e;padding-bottom:6px}
+  #ussd-message{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.9rem;line-height:1.5;flex:1}
+  .phone-input{width:100%;border:1px solid #73846b;border-radius:4px;background:#eff7e8;color:#172416;padding:8px;font:inherit;margin:0}
+  .phone-softkeys{display:flex;justify-content:space-between;color:#dbe4eb;font-size:.75rem;padding:8px 4px 12px}
+  .phone-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .phone-key{border:0;border-radius:12px;background:linear-gradient(#56616d,#303943);color:white;min-height:48px;font-size:1.2rem;font-weight:700;box-shadow:0 3px 0 #151a20;cursor:pointer}
+  .phone-key:active{transform:translateY(2px);box-shadow:0 1px 0 #151a20}
+  .phone-actions{display:flex;justify-content:center;gap:20px;margin-top:14px}
+  .phone-action{border:0;border-radius:50%;width:42px;height:42px;color:white;font-weight:bold;cursor:pointer}
+  .phone-send{background:#23834b}.phone-end{background:#a33c3c}
+  .sim-help{font-size:.92rem}.sim-help li{margin:.45rem 0}
+  .sim-status{font-size:.85rem;color:var(--muted);margin-top:.75rem;min-height:1.3em}
+  @media(max-width:650px){.sim-wrap{grid-template-columns:1fr}.feature-phone{max-width:310px}.sim-help{order:-1}}
+</style>
+<div class="card">
+  <h1>Button-Phone USSD Simulator</h1>
+  <p>Try the Tsebisa reporting menu as if you were using a basic mobile phone. Choose Sesotho or English, enter the report details and submit it to the existing reports database.</p>
+  <div class="sim-wrap">
+    <section class="feature-phone" aria-label="Simulated feature phone">
+      <div class="phone-brand">TSEBISA MOBILE</div>
+      <div class="phone-screen">
+        <div class="screen-top"><span id="network-label">NO NETWORK • DEMO</span><span>100% ▰</span></div>
+        <div id="ussd-message" aria-live="polite">Ready to dial *123#</div>
+        <label for="ussd-input" id="input-label" style="font-size:.75rem;color:#253622;margin:0">Your response</label>
+        <input id="ussd-input" class="phone-input" type="text" maxlength="240" autocomplete="off" placeholder="Press *123# to start" disabled>
+      </div>
+      <div class="phone-softkeys"><span id="left-softkey">Select</span><span>Back</span></div>
+      <div class="phone-keypad" aria-label="Phone keypad">
+        <button class="phone-key" data-key="1">1</button><button class="phone-key" data-key="2">2</button><button class="phone-key" data-key="3">3</button>
+        <button class="phone-key" data-key="4">4</button><button class="phone-key" data-key="5">5</button><button class="phone-key" data-key="6">6</button>
+        <button class="phone-key" data-key="7">7</button><button class="phone-key" data-key="8">8</button><button class="phone-key" data-key="9">9</button>
+        <button class="phone-key" data-key="*">*</button><button class="phone-key" data-key="0">0</button><button class="phone-key" data-key="#">#</button>
+      </div>
+      <div class="phone-actions"><button class="phone-action phone-send" id="send-btn" title="Send / select">OK</button><button class="phone-action phone-end" id="end-btn" title="End / restart">END</button></div>
+      <div class="sim-status" id="sim-status" role="status">Demo only. No mobile network connection is made.</div>
+    </section>
+    <aside class="sim-help">
+      <h2>How to use the simulator</h2>
+      <ol>
+        <li>Press <strong>*123#</strong> on the keypad to open the Tsebisa menu.</li>
+        <li>Choose <strong>1 for Sesotho</strong> or <strong>2 for English</strong>.</li>
+        <li>Follow the menu choices to select the service problem.</li>
+        <li>For location, description and phone number, type into the response box or use the number keys.</li>
+        <li>Press <strong>OK</strong> to send each response.</li>
+        <li>Confirm the report to save it. A reference number will appear on the phone screen.</li>
+      </ol>
+      <p><strong>Note:</strong> This is a browser-based simulation of a USSD session. It uses the existing Flask <code>/api/ussd</code> endpoint and does not require an actual shortcode or charge mobile airtime.</p>
+      <a class="btn btn-outline btn-block" href="{{ url_for('dashboard') }}">View reports in dashboard</a>
+    </aside>
+  </div>
+</div>
+<script>
+(() => {
+  const message = document.getElementById('ussd-message');
+  const input = document.getElementById('ussd-input');
+  const status = document.getElementById('sim-status');
+  const sendButton = document.getElementById('send-btn');
+  let accumulated = '';
+  let active = false;
+  let ended = false;
+  let awaitingText = false;
+  let dialBuffer = '';
+
+  function show(text) { message.textContent = text; }
+  function setInput(enabled, placeholder='Enter your response') {
+    input.disabled = !enabled; input.value = ''; input.placeholder = placeholder;
+    input.maxLength = 240; awaitingText = enabled;
+  }
+  async function sendToUssd(value, isDial=false) {
+    status.textContent = 'Connecting to Tsebisa demo...';
+    sendButton.disabled = true;
+    try {
+      const response = await fetch('{{ url_for("ussd.ussd_api") }}', {
+        method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({text: isDial ? '' : (accumulated ? accumulated + '*' + value : value)})
+      });
+      const raw = (await response.text()).trim();
+      const isEnd = raw.startsWith('END ');
+      const isContinue = raw.startsWith('CON ');
+      const content = raw.replace(/^(CON|END)\s*/, '');
+      if (!response.ok || (!isEnd && !isContinue)) throw new Error('Unexpected USSD response');
+      if (!isDial) accumulated = accumulated ? accumulated + '*' + value : value;
+      else accumulated = '';
+      show(content);
+      ended = isEnd; active = !isEnd;
+      setInput(!isEnd, isEnd ? 'Session ended' : 'Type answer or press a number');
+      status.textContent = isEnd ? 'Session finished. Press END to start again.' : 'USSD session active.';
+      if (isEnd) document.getElementById('left-softkey').textContent = 'Done';
+    } catch (error) {
+      status.textContent = 'Could not contact the local Tsebisa server. Check that Flask is running.';
+      show('Connection error. Please try again.');
+    } finally { sendButton.disabled = false; }
+  }
+  async function dial() {
+    if (dialBuffer !== '*123#') { status.textContent = 'Please dial *123# exactly.'; dialBuffer=''; return; }
+    dialBuffer=''; active=true; ended=false; document.getElementById('left-softkey').textContent='Select';
+    await sendToUssd('', true);
+  }
+  document.querySelectorAll('.phone-key').forEach(button => button.addEventListener('click', () => {
+    const key = button.dataset.key;
+    if (!active && !ended) { dialBuffer += key; show('Dialling ' + dialBuffer); return; }
+    if (ended) return;
+    if (awaitingText) input.value += key;
+  }));
+  sendButton.addEventListener('click', async () => {
+    if (!active && !ended) { await dial(); return; }
+    if (ended) return;
+    const value = input.value.trim();
+    if (!value) { status.textContent = 'Enter a response before pressing OK.'; return; }
+    await sendToUssd(value);
+  });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') sendButton.click(); });
+  document.getElementById('end-btn').addEventListener('click', () => {
+    accumulated=''; active=false; ended=false; dialBuffer='';
+    setInput(false, 'Press *123# to start');
+    show('Ready to dial *123#');
+    status.textContent='Session reset. No report was submitted unless you confirmed it.';
+    document.getElementById('left-softkey').textContent='Select';
+  });
+})();
+</script>
+{% endblock %}

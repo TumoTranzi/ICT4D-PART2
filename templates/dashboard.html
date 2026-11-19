@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Partner Dashboard</h1>
+  <p>Incoming community reports. Update status as you work on them.</p>
+
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+    <a href="{{ url_for('dashboard', status='all') }}" class="btn {% if current_filter != 'all' %}btn-outline{% endif %}" style="padding:0.4rem 0.9rem;font-size:0.85rem;">All</a>
+    <a href="{{ url_for('dashboard', status='received') }}" class="btn {% if current_filter != 'received' %}btn-outline{% endif %}" style="padding:0.4rem 0.9rem;font-size:0.85rem;">Received</a>
+    <a href="{{ url_for('dashboard', status='in_progress') }}" class="btn {% if current_filter != 'in_progress' %}btn-outline{% endif %}" style="padding:0.4rem 0.9rem;font-size:0.85rem;">In Progress</a>
+    <a href="{{ url_for('dashboard', status='closed') }}" class="btn {% if current_filter != 'closed' %}btn-outline{% endif %}" style="padding:0.4rem 0.9rem;font-size:0.85rem;">Closed</a>
+  </div>
+
+  {% if reports %}
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Ref</th>
+          <th>Channel</th>
+          <th>Category</th>
+          <th>Location</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reports %}
+        <tr>
+          <td><a href="{{ url_for('view_report', reference=r.reference, status=current_filter) }}"><strong>{{ r.reference }}</strong></a></td>
+          <td><span class="badge" style="background:#e0e7ff; color:#3730a3;">{{ r.submission_channel }}</span></td>
+          <td>{{ categories[r.category]["en"] if r.category in categories else r.category }}</td>
+          <td>{{ r.location or "—" }}</td>
+          <td><span class="badge badge-{{ r.status }}">{{ status_labels[r.status]["en"] }}</span></td>
+          <td style="white-space:nowrap;font-size:0.85rem;">{{ r.created_at }}</td>
+          <td>
+            <form method="post" action="{{ url_for('update_status', reference=r.reference) }}" style="display:flex;gap:0.3rem;">
+              <input type="hidden" name="current_filter" value="{{ current_filter }}">
+              <select name="status" style="width:auto;padding:0.3rem;margin:0;font-size:0.8rem;">
+                <option value="received" {% if r.status=='received' %}selected{% endif %}>Received</option>
+                <option value="in_progress" {% if r.status=='in_progress' %}selected{% endif %}>In progress</option>
+                <option value="closed" {% if r.status=='closed' %}selected{% endif %}>Closed</option>
+              </select>
+              <button type="submit" class="btn" style="padding:0.3rem 0.6rem;font-size:0.8rem;">Save</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p style="text-align:center;padding:2rem 0;color:var(--muted);">No reports yet. When citizens submit reports they will appear here.</p>
+  {% endif %}
+</div>
+{% endblock %}
