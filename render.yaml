@@ -2,19 +2,15 @@ services:
   - type: web
     name: ttsebisa
     runtime: python
-    plan: starter
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     healthCheckPath: /
-    disk:
-      name: ttsebisa-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: TSEBISA_ENV
         value: production
       - key: TSEBISA_DATA_DIR
-        value: /var/data
+        value: /tmp/ttsebisa-data
       - key: TSEBISA_SECRET_KEY
         generateValue: true
       - key: TSEBISA_ADMIN_PASSWORD
