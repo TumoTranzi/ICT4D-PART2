@@ -22,7 +22,7 @@
 
 Double-click `start_ttsebisa.bat`, or run `app.py` from this folder after installing `requirements.txt`. The local database is created in the configured data directory.
 
-For a local dashboard demonstration, run `python seed_demo_reports.py` from this folder. It safely adds eight synthetic reports with `[DEMO]` descriptions and a sample three-role conversation, and it can be rerun without duplicating them. Sample citizen conversation access: reference `TSE-D001`, phone `0000000000` (placeholder only; not a contact number). These records are written only to the database selected by `TSEBISA_DATA_DIR` (the project-folder database by default).
+For a local dashboard demonstration, run `python seed_demo_reports.py` from this folder. It safely adds eight synthetic reports and a sample three-role conversation, and it can be rerun without duplicating them. Sample citizen conversation access: reference `TSE-D001`, phone `0000000000` (placeholder only; not a contact number). These records are written only to the database selected by `TSEBISA_DATA_DIR` (the project-folder database by default).
 
 ## Real mobile network and SMS
 

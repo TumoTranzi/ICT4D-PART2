@@ -1,7 +1,8 @@
-"""Append a small, clearly labelled synthetic dataset for the local dashboard demo.
+"""Append a small synthetic dataset for the local dashboard demo.
 
 Safe to rerun: fixed demo references are inserted only when absent, and no existing
-reports or conversations are edited. Set TSEBISA_DATA_DIR to seed another database.
+reports or conversations outside these sample records are edited. Set TSEBISA_DATA_DIR
+to seed another database.
 """
 from datetime import datetime
 import os
@@ -13,19 +14,19 @@ DB_PATH = os.path.join(DATA_DIR, "tsebisa.db")
 
 DEMO_PHONE = "0000000000"  # Deliberately invalid as a real contact number.
 REPORTS = [
-    ("TSE-D001", "Website", "water", "[DEMO] Water point leak reported for dashboard demonstration.", "[DEMO] Maseru", "en", "received", "2026-11-18 09:20"),
-    ("TSE-D002", "USSD", "roads", "[DEMO] Pothole report used only to populate the example charts.", "[DEMO] Roma", "st", "in_progress", "2026-10-12 11:05"),
-    ("TSE-D003", "Website", "refuse", "[DEMO] Missed refuse collection example report.", "[DEMO] Hlotse", "en", "closed", "2026-09-08 14:30"),
-    ("TSE-D004", "USSD", "lights", "[DEMO] Street light fault example; not a real service request.", "[DEMO] Mafeteng", "st", "received", "2026-08-21 08:45"),
-    ("TSE-D005", "Website", "other", "[DEMO] General community-service example for the dashboard.", "[DEMO] Butha-Buthe", "en", "in_progress", "2026-07-17 16:10"),
-    ("TSE-D006", "USSD", "water", "[DEMO] Water supply example used to demonstrate the USSD channel graph.", "[DEMO] Qacha's Nek", "st", "closed", "2026-06-03 10:00"),
-    ("TSE-D007", "Website", "roads", "[DEMO] Road maintenance example; synthetic data only.", "[DEMO] Thaba-Tseka", "en", "received", "2026-11-05 13:15"),
-    ("TSE-D008", "USSD", "refuse", "[DEMO] Refuse collection example; synthetic data only.", "[DEMO] Mokhotlong", "st", "in_progress", "2026-10-29 12:40"),
+    ("TSE-D001", "Website", "water", "Water point leak reported near the market.", "Maseru", "en", "received", "2026-11-18 09:20"),
+    ("TSE-D002", "USSD", "roads", "Pothole reported on the road near the school.", "Roma", "st", "in_progress", "2026-10-12 11:05"),
+    ("TSE-D003", "Website", "refuse", "Missed refuse collection in the neighbourhood.", "Hlotse", "en", "closed", "2026-09-08 14:30"),
+    ("TSE-D004", "USSD", "lights", "Street light is not working near the clinic.", "Mafeteng", "st", "received", "2026-08-21 08:45"),
+    ("TSE-D005", "Website", "other", "Community service request for a blocked public area.", "Butha-Buthe", "en", "in_progress", "2026-07-17 16:10"),
+    ("TSE-D006", "USSD", "water", "Water supply interruption reported in the area.", "Qacha's Nek", "st", "closed", "2026-06-03 10:00"),
+    ("TSE-D007", "Website", "roads", "Road maintenance is needed near the bus stop.", "Thaba-Tseka", "en", "received", "2026-11-05 13:15"),
+    ("TSE-D008", "USSD", "refuse", "Refuse collection has been missed this week.", "Mokhotlong", "st", "in_progress", "2026-10-29 12:40"),
 ]
 SAMPLE_MESSAGES = [
-    ("citizen", "Citizen", "[DEMO] I am checking how replies appear in this sample conversation.", "2026-11-18 09:22"),
-    ("partner", "Minister", "[DEMO] Sample Minister reply. This is not a real service commitment.", "2026-11-18 09:25"),
-    ("admin", "Prime Minister", "[DEMO] Sample Prime Minister reply for demonstration only.", "2026-11-18 09:27"),
+    ("citizen", "Citizen", "I am checking how replies appear in this sample conversation.", "2026-11-18 09:22"),
+    ("partner", "Minister", "The report has been received and assigned for follow-up.", "2026-11-18 09:25"),
+    ("admin", "Prime Minister", "We will review the progress and provide an update.", "2026-11-18 09:27"),
 ]
 
 if not os.path.exists(DB_PATH):
@@ -40,7 +41,9 @@ if "reports" not in tables:
 
 for row in REPORTS:
     collision = conn.execute("SELECT description FROM reports WHERE reference=?", (row[0],)).fetchone()
-    if collision and not (collision["description"] or "").startswith("[DEMO]"):
+    current_description = (collision["description"] or "") if collision else ""
+    expected_description = row[3]
+    if collision and current_description != expected_description and not current_description.startswith("[DEMO] "):
         conn.close()
         raise SystemExit(f"Reference {row[0]} is already used by a non-demo report; no demo data was inserted.")
 
@@ -59,6 +62,11 @@ conn.execute("CREATE INDEX IF NOT EXISTS idx_conversations_report_ref ON convers
 existing_before = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
 added = 0
 for reference, channel, category, description, location, language, status, created_at in REPORTS:
+    # Keep the existing sample rows while removing the old visible [DEMO] marker.
+    conn.execute(
+        "UPDATE reports SET description=?, location=? WHERE reference=?",
+        (description, location, reference),
+    )
     result = conn.execute(
         """INSERT OR IGNORE INTO reports
         (reference, submission_channel, category, description, location, phone, language, status, created_at)
@@ -68,6 +76,12 @@ for reference, channel, category, description, location, language, status, creat
     added += result.rowcount
 
 for role, sender, message, created_at in SAMPLE_MESSAGES:
+    old_message = conn.execute(
+        "SELECT id, message FROM conversations WHERE report_ref='TSE-D001' AND sender_role=? ORDER BY id LIMIT 1",
+        (role,),
+    ).fetchone()
+    if old_message and old_message["message"].startswith("[DEMO] "):
+        conn.execute("UPDATE conversations SET message=? WHERE id=?", (old_message["message"][7:], old_message["id"]))
     conn.execute(
         """INSERT INTO conversations (report_ref, sender_role, sender_name, message, created_at)
         SELECT 'TSE-D001', ?, ?, ?, ?
@@ -78,7 +92,6 @@ for role, sender, message, created_at in SAMPLE_MESSAGES:
 
 conn.commit()
 total = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
-demo_total = conn.execute("SELECT COUNT(*) FROM reports WHERE description LIKE '[DEMO]%' ").fetchone()[0]
 conn.close()
-print(f"Added {added} demo reports. Database now has {total} reports, including {demo_total} labelled demo reports.")
-print("Demo conversation: reference TSE-D001; phone 0000000000 (demo placeholder only).")
+print(f"Added {added} sample reports. Database now has {total} reports.")
+print("Sample conversation: reference TSE-D001; phone 0000000000 (placeholder only).")
