@@ -14,6 +14,8 @@ import random
 import string
 import re
 import secrets
+import time
+import math
 
 app = Flask(__name__)
 IS_PRODUCTION = os.environ.get("TSEBISA_ENV", "development").lower() == "production"
@@ -27,6 +29,7 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=IS_PRODUCTION,
+    TEMPLATES_AUTO_RELOAD=not IS_PRODUCTION,
 )
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -107,6 +110,18 @@ def init_db():
         )
     """)
     c.execute("""
+        CREATE TABLE IF NOT EXISTS conversations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_ref TEXT NOT NULL,
+            sender_role TEXT NOT NULL,
+            sender_name TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (report_ref) REFERENCES reports(reference)
+        )
+    """)
+    c.execute("CREATE INDEX IF NOT EXISTS idx_conversations_report_ref ON conversations(report_ref, id)")
+    c.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
@@ -141,6 +156,32 @@ def init_db():
 def generate_reference():
     code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
     return f"TSE-{code}"
+
+
+def chat_csrf_token():
+    if "chat_csrf_token" not in session:
+        session["chat_csrf_token"] = secrets.token_urlsafe(32)
+    return session["chat_csrf_token"]
+
+
+def chat_csrf_valid(value):
+    expected = session.get("chat_csrf_token", "")
+    return bool(expected and value and secrets.compare_digest(expected, value))
+
+
+def can_view_conversation(reference):
+    if current_role() in ("partner", "admin"):
+        return True
+    return (
+        session.get("citizen_chat_ref") == reference
+        and session.get("citizen_chat_until", 0) > time.time()
+    )
+
+
+def report_phone_matches(stored_phone, entered_phone):
+    stored_digits = re.sub(r"\D", "", stored_phone or "")
+    entered_digits = re.sub(r"\D", "", entered_phone or "")
+    return bool(stored_digits and entered_digits and secrets.compare_digest(stored_digits, entered_digits))
 
 # -------------------------------------------------
 # Category definitions
@@ -318,12 +359,109 @@ def normalize_status_filter(status_value):
 def dashboard():
     status_filter = normalize_status_filter(request.args.get("status", "all"))
     conn = get_db()
+    all_reports = conn.execute("SELECT reference, submission_channel, category, status, created_at FROM reports").fetchall()
     if status_filter == "all":
         rows = conn.execute("SELECT * FROM reports ORDER BY created_at DESC").fetchall()
     else:
         rows = conn.execute("SELECT * FROM reports WHERE status=? ORDER BY created_at DESC", (status_filter,)).fetchall()
+    message_rows = conn.execute("SELECT report_ref, COUNT(*) AS total FROM conversations GROUP BY report_ref").fetchall()
+    conversation_counts = {row["report_ref"]: row["total"] for row in message_rows}
     conn.close()
-    return render_template("dashboard.html", reports=rows, categories=CATEGORIES, status_labels=STATUS_LABELS, current_filter=status_filter)
+
+    status_counts = {key: 0 for key in STATUS_LABELS}
+    category_counts = {key: 0 for key in CATEGORIES}
+    channel_counts = {"Website": 0, "USSD": 0}
+    month_counts = {}
+    month_website_counts = {}
+    month_ussd_counts = {}
+    month_message_counts = {}
+    for row in all_reports:
+        status_counts[row["status"]] = status_counts.get(row["status"], 0) + 1
+        category_counts[row["category"]] = category_counts.get(row["category"], 0) + 1
+        channel = row["submission_channel"] or "Website"
+        channel_counts[channel] = channel_counts.get(channel, 0) + 1
+        month = (row["created_at"] or "")[:7]
+        if month:
+            month_counts[month] = month_counts.get(month, 0) + 1
+            target = month_ussd_counts if channel.lower() == "ussd" else month_website_counts
+            target[month] = target.get(month, 0) + 1
+
+    conn = get_db()
+    reply_month_rows = conn.execute(
+        "SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS total "
+        "FROM conversations WHERE sender_role IN ('citizen', 'partner', 'admin') GROUP BY month"
+    ).fetchall()
+    conn.close()
+    for row in reply_month_rows:
+        if row["month"]:
+            month_message_counts[row["month"]] = row["total"]
+    message_total = sum(month_message_counts.values())
+
+    status_max = max(status_counts.values(), default=0) or 1
+    category_max = max(category_counts.values(), default=0) or 1
+    channel_max = max(channel_counts.values(), default=0) or 1
+    status_chart = [
+        {"label": STATUS_LABELS[key]["en"], "count": value, "width": round(value / status_max * 100), "color": color}
+        for key, value, color in (("received", status_counts.get("received", 0), "#c99a21"), ("in_progress", status_counts.get("in_progress", 0), "#2365a8"), ("closed", status_counts.get("closed", 0), "#20804c"))
+    ]
+    category_chart = [
+        {"label": CATEGORIES[key]["en"], "count": category_counts.get(key, 0), "width": round(category_counts.get(key, 0) / category_max * 100)}
+        for key in CATEGORIES
+    ]
+    channel_chart = [
+        {"label": key, "count": value, "width": round(value / channel_max * 100)}
+        for key, value in channel_counts.items()
+    ]
+    now = datetime.now()
+    current_month = datetime(now.year, now.month, 1)
+    first_month = min(month_counts) if month_counts else current_month.strftime("%Y-%m")
+    start_year, start_month = map(int, first_month.split("-"))
+    cursor = datetime(start_year, start_month, 1)
+    chart_months = []
+    while cursor <= current_month:
+        chart_months.append(cursor)
+        next_month = cursor.month + 1
+        cursor = datetime(cursor.year + (next_month - 1) // 12, (next_month - 1) % 12 + 1, 1)
+    # Keep the all-time view readable while preserving up to three years of history.
+    chart_months = chart_months[-36:]
+    all_months = [month.strftime("%Y-%m") for month in chart_months]
+    chart_max = max((month_counts.get(key, 0) for key in all_months), default=0)
+    chart_axis_max = max(4, int(math.ceil(chart_max / 4) * 4))
+    month_chart = []
+    for index, month in enumerate(chart_months):
+        key = month.strftime("%Y-%m")
+        month_chart.append({
+            "key": key,
+            "label": month.strftime("%b"),
+            "year": month.strftime("%y"),
+            "count": month_counts.get(key, 0),
+            "height": max(0, round(month_counts.get(key, 0) / chart_axis_max * 100)),
+            "index": index,
+        })
+    axis_ticks = [chart_axis_max, round(chart_axis_max * .75), round(chart_axis_max * .5), round(chart_axis_max * .25), 0]
+
+    def sparkline_points(values):
+        values = list(values)[-6:]
+        values = [0] * (6 - len(values)) + values
+        peak = max(values) or 1
+        return " ".join(f"{4 + i * 18.4:.1f},{27 - value / peak * 22:.1f}" for i, value in enumerate(values))
+
+    spark_months = all_months[-6:]
+    card_series = [
+        {"label": "Total reports", "value": len(all_reports), "note": "Reports across both channels", "points": sparkline_points(month_counts.get(key, 0) for key in spark_months)},
+        {"label": "Conversation replies", "value": message_total, "note": "Citizen and staff messages", "points": sparkline_points(month_message_counts.get(key, 0) for key in spark_months)},
+        {"label": "Website submissions", "value": channel_counts.get("Website", 0), "note": "Reports created through the website", "points": sparkline_points(month_website_counts.get(key, 0) for key in spark_months)},
+        {"label": "USSD submissions", "value": channel_counts.get("USSD", 0), "note": "Includes browser USSD demonstrations", "points": sparkline_points(month_ussd_counts.get(key, 0) for key in spark_months)},
+    ]
+
+    return render_template(
+        "dashboard.html", reports=rows, categories=CATEGORIES,
+        status_labels=STATUS_LABELS, current_filter=status_filter,
+        total_reports=len(all_reports), conversation_counts=conversation_counts,
+        status_chart=status_chart, category_chart=category_chart,
+        channel_chart=channel_chart, month_chart=month_chart,
+        card_series=card_series, axis_ticks=axis_ticks,
+    )
 
 @app.route("/dashboard/update/<reference>", methods=["POST"])
 @role_required("partner", "admin")
@@ -333,8 +471,16 @@ def update_status(reference):
     if new_status in STATUS_LABELS:
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
         conn = get_db()
-        conn.execute("UPDATE reports SET status=?, updated_at=? WHERE reference=?", (new_status, now, reference))
-        conn.commit()
+        report = conn.execute("SELECT status FROM reports WHERE reference=?", (reference,)).fetchone()
+        if report:
+            conn.execute("UPDATE reports SET status=?, updated_at=? WHERE reference=?", (new_status, now, reference))
+            if report["status"] != new_status:
+                label = STATUS_LABELS[new_status]["en"]
+                conn.execute(
+                    "INSERT INTO conversations (report_ref, sender_role, sender_name, message, created_at) VALUES (?, 'system', 'Tsebisa status update', ?, ?)",
+                    (reference, f"Report status changed to: {label}.", now),
+                )
+            conn.commit()
         conn.close()
         flash(f"Report {reference} updated to {new_status}", "success")
     return redirect(url_for("dashboard", status=current_filter))
@@ -345,10 +491,99 @@ def view_report(reference):
     current_filter = normalize_status_filter(request.args.get("status", "all"))
     conn = get_db()
     report = conn.execute("SELECT * FROM reports WHERE reference=?", (reference,)).fetchone()
+    message_count = conn.execute("SELECT COUNT(*) FROM conversations WHERE report_ref=?", (reference,)).fetchone()[0]
     conn.close()
     if not report:
         return "Report not found", 404
-    return render_template("report_view.html", report=report, categories=CATEGORIES, status_labels=STATUS_LABELS, current_filter=current_filter)
+    return render_template("report_view.html", report=report, categories=CATEGORIES, status_labels=STATUS_LABELS, current_filter=current_filter, message_count=message_count)
+
+
+@app.route("/conversation", methods=["GET"])
+def conversation_lookup():
+    reference = request.args.get("reference", "").strip().upper()
+    report = None
+    messages = []
+    if reference:
+        conn = get_db()
+        report = conn.execute("SELECT reference, category, description, location, status, created_at FROM reports WHERE reference=?", (reference,)).fetchone()
+        conn.close()
+        if report and can_view_conversation(reference):
+            conn = get_db()
+            messages = conn.execute("SELECT sender_role, sender_name, message, created_at FROM conversations WHERE report_ref=? ORDER BY id", (reference,)).fetchall()
+            conn.close()
+    return render_template(
+        "conversation.html", reference=reference, report=report, messages=messages,
+        authenticated=bool(report and can_view_conversation(reference)), csrf_token=chat_csrf_token(),
+        role_labels=ROLE_LABELS, categories=CATEGORIES, status_labels=STATUS_LABELS,
+    )
+
+
+@app.route("/conversation/access", methods=["POST"])
+def conversation_access():
+    reference = request.form.get("reference", "").strip().upper()
+    phone = request.form.get("phone", "").strip()
+    if not chat_csrf_valid(request.form.get("csrf_token")):
+        flash("Please refresh the page and try again.", "error")
+        return redirect(url_for("conversation_lookup", reference=reference))
+    conn = get_db()
+    report = conn.execute("SELECT reference, phone FROM reports WHERE reference=?", (reference,)).fetchone()
+    conn.close()
+    if not report or not report_phone_matches(report["phone"], phone):
+        flash("We could not verify that report reference and phone number.", "error")
+        return redirect(url_for("conversation_lookup", reference=reference))
+    session["citizen_chat_ref"] = reference
+    session["citizen_chat_until"] = time.time() + 1800
+    return redirect(url_for("conversation_lookup", reference=reference))
+
+
+@app.route("/conversation/<reference>/reply", methods=["POST"])
+def conversation_reply(reference):
+    reference = reference.strip().upper()
+    if not can_view_conversation(reference):
+        flash("Verify the report reference and phone number before replying.", "error")
+        return redirect(url_for("conversation_lookup", reference=reference))
+    if not chat_csrf_valid(request.form.get("csrf_token")):
+        flash("Please refresh the page and try again.", "error")
+        return redirect(url_for("conversation_lookup", reference=reference))
+    message = request.form.get("message", "").strip()
+    if not message or len(message) > 1000:
+        flash("Enter a message up to 1,000 characters.", "error")
+        return redirect(url_for("conversation_lookup", reference=reference))
+    role = current_role()
+    if role in ("partner", "admin"):
+        sender_role = role
+        sender_name = session.get("display_name") or ROLE_LABELS[role]
+    else:
+        sender_role = "citizen"
+        sender_name = "Citizen"
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    conn = get_db()
+    exists = conn.execute("SELECT 1 FROM reports WHERE reference=?", (reference,)).fetchone()
+    if not exists:
+        conn.close()
+        return "Report not found", 404
+    conn.execute(
+        "INSERT INTO conversations (report_ref, sender_role, sender_name, message, created_at) VALUES (?, ?, ?, ?, ?)",
+        (reference, sender_role, sender_name, message, now),
+    )
+    conn.commit()
+    conn.close()
+    return redirect(url_for("conversation_lookup", reference=reference))
+
+
+@app.route("/api/conversation/<reference>")
+def conversation_messages_api(reference):
+    reference = reference.strip().upper()
+    if not can_view_conversation(reference):
+        return jsonify({"error": "Verify the report reference and phone number to view this conversation."}), 403
+    conn = get_db()
+    exists = conn.execute("SELECT 1 FROM reports WHERE reference=?", (reference,)).fetchone()
+    if not exists:
+        conn.close()
+        return jsonify({"error": "Report not found."}), 404
+    rows = conn.execute("SELECT sender_role, sender_name, message, created_at FROM conversations WHERE report_ref=? ORDER BY id", (reference,)).fetchall()
+    conn.close()
+    return jsonify([dict(row) for row in rows])
 
 @app.route("/api/reports")
 @role_required("partner", "admin")
@@ -433,5 +668,5 @@ if __name__ == "__main__":
     print("Tsebisa Pilot Server starting...")
     print("=" * 50)
     
-    port = int(os.environ.get("PORT", 5001))
+    port = int(os.environ.get("PORT", 5002))
     app.run(debug=False, host="0.0.0.0", port=port)

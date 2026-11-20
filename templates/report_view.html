@@ -51,6 +51,8 @@
     <button type="submit" class="btn">Save Status</button>
   </form>
 
+  <a href="{{ url_for('conversation_lookup', reference=report.reference) }}" class="btn" style="margin-top:0.75rem;">Open conversation ({{ message_count }} messages)</a>
+
   <a href="{{ url_for('dashboard', status=current_filter) }}" class="btn btn-outline" style="margin-top:1rem;">← Back to Dashboard</a>
 </div>
 {% endblock %}

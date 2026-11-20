@@ -5,15 +5,16 @@
   <h1>Tsebisa</h1>
   <p style="font-size:1.05rem;color:#333;">
     <strong>Community Service Delivery Reporting</strong> for Lesotho.
-    Report problems with water, roads, refuse and more — simply, in Sesotho, from any phone.
+    Report problems with water, roads, refuse and more — simply, in Sesotho or English, on the website.
   </p>
   <p>
-    This pilot prototype simulates a USSD/SMS reporting channel designed for feature phones
-    and low-connectivity areas. Citizens get an immediate reference number; ministers see
-    reports on a simple dashboard.
+    This pilot provides a web reporting form and a browser-based USSD phone simulator.
+    Reports receive a reference number; Ministers and the Prime Minister can review them
+    and reply in a shared conversation. A mobile-network USSD code and SMS are not connected yet.
   </p>
   <a href="/report" class="btn btn-block">Start a Report (Citizen)</a>
   <a href="/dashboard" class="btn btn-outline btn-block" style="margin-top:0.6rem;">Minister Dashboard</a>
+  <a href="{{ url_for('conversation_lookup') }}" class="btn btn-outline btn-block" style="margin-top:0.6rem;">Track / Reply to a Report</a>
   <a href="/guide" class="btn btn-outline btn-block" style="margin-top:0.6rem;">Citizen Guide (EN / ST)</a>
 </div>
 

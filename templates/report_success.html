@@ -15,10 +15,14 @@
   </div>
 
   {% if lang == "st" %}
-    <p>U tla fumana SMS e tiisang. Sebelisa nomoro ena ha u botsa ka tsoelo-pele.</p>
+    <p>SMS ha e so hokahane. Sebelisa nomoro ena le nomoro ea mohala eo u e kentseng ho araba kapa ho botsa ka tsoelo-pele.</p>
   {% else %}
-    <p>You will receive an SMS confirmation. Use this number if you ask about progress.</p>
+    <p>SMS is not connected yet. Use this reference and the phone number you entered to reply or ask for an update.</p>
   {% endif %}
+
+  <a href="{{ url_for('conversation_lookup', reference=ref) }}" class="btn btn-outline" style="margin-top:0.5rem;">
+    {% if lang == "st" %}Araba kapa botsa ka tlaleho{% else %}Reply / Ask about this report{% endif %}
+  </a>
 
   <a href="/" class="btn" style="margin-top:1rem;">
     {% if lang == "st" %}Khutlela qalong{% else %}Back to Home{% endif %}

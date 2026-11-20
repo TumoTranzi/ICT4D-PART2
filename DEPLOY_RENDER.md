@@ -7,6 +7,7 @@ This configuration deploys TTsebisa on Render's free web-service plan. It does n
 - Render may spin a free service down after 15 minutes without traffic; the next visit can take about a minute to wake.
 - This app uses SQLite and stores uploads on the service filesystem. On the free plan, local SQLite data, photos and voice notes can be lost when Render restarts, spins down or redeploys the service.
 - Use this for a three-week demonstration with test data only. Download anything you need to keep before a redeploy or restart. Do not collect real citizen case data on this temporary setup.
+- The Render start command adds eight clearly labelled synthetic dashboard reports and one sample three-role conversation when absent. Use reference `TSE-D001` and placeholder phone `0000000000` to open the sample citizen thread. These are demonstration records, not real complaints or contact details.
 - This deployment gives the website and browser USSD simulator a public URL. It does not provide a carrier short code or outbound SMS.
 
 Render documents these limits in its [free-plan guide](https://render.com/docs/free).

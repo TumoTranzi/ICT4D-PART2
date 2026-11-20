@@ -6,7 +6,7 @@ A fresh, runnable Tsebisa project with the website, shared SQLite report databas
 
 1. Install Python 3.10 or later.
 2. Double-click `start_ttsebisa.bat` (or run it from PowerShell).
-3. Open http://127.0.0.1:5001/
+3. Open http://127.0.0.1:5002/
 
 The launcher creates a local `.venv`, installs `requirements.txt`, and starts Flask. The app creates a fresh `tsebisa.db` on first start; this project does not include or overwrite the database from the original Tsebisa folder.
 
@@ -19,7 +19,9 @@ Select **Phone** in the left navigation. Press `*123#`, choose **OK**, and follo
 - Sesotho and English website reporting
 - Browser-based phone keypad and USSD conversation
 - Shared SQLite reports for website and simulator submissions
-- Dashboard with channel labels and status updates
+- Minister/Prime Minister dashboard with Tsebisa green-and-gold report charts and status updates
+- Reference-based conversations between citizens and staff
+- Clearly labelled sample reports for the demo dashboard (`python seed_demo_reports.py`)
 - Safe database initialization; startup does not drop existing tables
 
 ## Demo vs. live mobile service

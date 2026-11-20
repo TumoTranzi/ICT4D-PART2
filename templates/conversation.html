@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Report conversation{% endblock %}
+{% block content %}
+<style>
+  .chat-shell{max-width:800px;margin:0 auto}.chat-head{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap}
+  .chat-head p{color:var(--muted);margin:.25rem 0}.report-summary{background:#f4f7f5;border:1px solid var(--border);border-radius:10px;padding:.9rem;margin:1rem 0}
+  .messages{display:flex;flex-direction:column;gap:.75rem;max-height:55vh;min-height:180px;overflow-y:auto;padding:.25rem;margin:1rem 0}
+  .message{max-width:84%;padding:.75rem .9rem;border-radius:14px;background:#eef3f0;border:1px solid #dfe7e2;align-self:flex-start;overflow-wrap:anywhere}
+  .message-citizen{align-self:flex-end;background:#e7f2ff;border-color:#cfdef0}.message-system{align-self:center;background:#fff7dc;border-color:#eee0a9;max-width:100%;font-size:.88rem}
+  .message-meta{display:flex;gap:.6rem;justify-content:space-between;color:var(--muted);font-size:.74rem;margin-bottom:.25rem}.message-text{white-space:pre-wrap;margin:0}
+  .chat-form{border-top:1px solid var(--border);padding-top:1rem}.chat-form textarea{min-height:95px}.privacy-hint{font-size:.82rem;color:var(--muted)}
+  @media(max-width:600px){.message{max-width:95%}.messages{max-height:60vh}}
+</style>
+<div class="card chat-shell">
+  <div class="chat-head">
+    <div><h1>Report conversation</h1><p>Citizens, Ministers and the Prime Minister can discuss this report in one thread.</p></div>
+    {% if session.get('role') in ('partner','admin') %}<a class="btn btn-outline" href="{{ url_for('dashboard') }}">Back to Dashboard</a>{% endif %}
+  </div>
+
+  {% if authenticated and report %}
+    <div class="report-summary">
+      <strong>{{ report.reference }}</strong>
+      <span class="badge badge-{{ report.status }}">{{ status_labels[report.status]['en'] }}</span>
+      <div style="margin-top:.4rem">{{ categories[report.category]['en'] if report.category in categories else report.category }} · {{ report.location or 'Location not provided' }}</div>
+      <div style="color:var(--muted);font-size:.88rem;margin-top:.25rem">{{ report.description or 'No written description' }}</div>
+    </div>
+    <div id="messages" class="messages" aria-live="polite" aria-label="Conversation messages">
+      {% for item in messages %}
+      <article class="message {% if item.sender_role=='citizen' %}message-citizen{% elif item.sender_role=='system' %}message-system{% endif %}">
+        <div class="message-meta"><strong>{% if item.sender_role=='system' %}Tsebisa status update{% elif item.sender_role=='citizen' %}Citizen{% else %}{{ item.sender_name }} · {{ role_labels[item.sender_role] if item.sender_role in role_labels else item.sender_role|title }}{% endif %}</strong><time>{{ item.created_at }}</time></div>
+        <p class="message-text">{{ item.message }}</p>
+      </article>
+      {% else %}<p id="empty-thread" style="color:var(--muted);text-align:center">No messages yet. Start the conversation below.</p>{% endfor %}
+    </div>
+    <form class="chat-form" method="post" action="{{ url_for('conversation_reply',reference=reference) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="message">Your message</label>
+      <textarea id="message" name="message" maxlength="1000" required placeholder="Write a reply or ask for an update…"></textarea>
+      <p class="privacy-hint">Do not include passwords or sensitive personal information. Messages are visible to staff with report access and the citizen verified for this reference.</p>
+      <button class="btn" type="submit">Send reply</button>
+    </form>
+    <script>
+      (() => {
+        const list = document.getElementById('messages');
+        const endpoint = {{ url_for('conversation_messages_api', reference=reference)|tojson }};
+        let rendered = list.querySelectorAll('.message').length;
+        async function refreshMessages() {
+          try {
+            const response = await fetch(endpoint, {headers:{'Accept':'application/json'}, cache:'no-store'});
+            if (!response.ok) return;
+            const messages = await response.json();
+            if (messages.length === rendered) return;
+            list.replaceChildren();
+            for (const item of messages) {
+              const article = document.createElement('article');
+              article.className = 'message ' + (item.sender_role === 'citizen' ? 'message-citizen' : item.sender_role === 'system' ? 'message-system' : '');
+              const meta = document.createElement('div'); meta.className = 'message-meta';
+              const sender = document.createElement('strong');
+              sender.textContent = item.sender_role === 'citizen' ? 'Citizen' : item.sender_role === 'system' ? 'Tsebisa status update' : item.sender_name + ' · ' + (item.sender_role === 'admin' ? 'Prime Minister' : 'Minister');
+              const time = document.createElement('time'); time.textContent = item.created_at;
+              const body = document.createElement('p'); body.className = 'message-text'; body.textContent = item.message;
+              meta.append(sender, time); article.append(meta, body); list.append(article);
+            }
+            rendered = messages.length; list.scrollTop = list.scrollHeight;
+          } catch (_) { /* Keep the current thread visible if a refresh is unavailable. */ }
+        }
+        list.scrollTop = list.scrollHeight;
+        window.setInterval(refreshMessages, 12000);
+      })();
+    </script>
+  {% else %}
+    <div class="report-summary"><strong>Citizen access</strong><p style="margin:.4rem 0 0">Enter the report reference and the phone number submitted with it. This verifies access to that report’s conversation. It does not create a Tsebisa account.</p></div>
+    <form method="post" action="{{ url_for('conversation_access') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="reference">Generated report reference</label>
+      <input id="reference" name="reference" value="{{ reference }}" maxlength="24" required autocomplete="off" placeholder="TSE-7K2M">
+      <label for="phone">Phone number recorded on the report</label>
+      <input id="phone" name="phone" type="tel" required autocomplete="tel" placeholder="Enter the same number used when reporting">
+      <button class="btn" type="submit">Verify and open conversation</button>
+    </form>
+    <p class="privacy-hint" style="margin-top:1rem">Keep your reference private. A person who has both the reference and the matching phone number can access the report thread. For this demo, citizen access remains active in this browser session for 30 minutes.</p>
+  {% endif %}
+</div>
+{% endblock %}
