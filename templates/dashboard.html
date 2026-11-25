@@ -21,13 +21,14 @@
   .analytics select{background:#123a22;color:#fff;border:1px solid #64814d;border-radius:8px;width:auto;min-width:150px;margin:0}
   .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:#35633e;border:1px solid #35633e;border-radius:12px;overflow:hidden;margin-bottom:1rem}
   .kpi{background:linear-gradient(145deg,#17462a,#12371f);padding:1rem;min-height:116px;display:grid;grid-template-columns:1fr 88px;column-gap:.5rem;align-items:center}
+  .kpi-link{color:inherit;text-decoration:none;cursor:pointer;transition:background .18s ease,transform .18s ease}.kpi-link:hover{background:linear-gradient(145deg,#1d5532,#174328);transform:translateY(-2px)}.kpi-link:focus-visible{position:relative;z-index:1;outline:3px solid #f6d77e;outline-offset:-4px}
   .kpi-label{font-size:.8rem;color:#d5e3d8}.kpi-value{font-size:1.85rem;line-height:1.1;font-weight:700;margin:.35rem 0;color:#fff}.kpi-note{font-size:.72rem;color:#aec5b4;line-height:1.35}
   .sparkline{width:88px;height:38px;align-self:center}.sparkline polyline{fill:none;stroke:#e6a817;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round}
   .chart-card-dark{background:linear-gradient(145deg,#123b23,#0f2d1b);border:1px solid #2e6340;border-radius:12px;padding:1rem;margin-bottom:1rem}
   .chart-title-row{display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap}
   .chart-title-row h2{font-size:1rem;margin:0}.chart-units{font-size:.76rem;color:#d1dfd4}
   .category-chart{display:grid;gap:1rem;margin-top:1.25rem}
-  .category-row{display:grid;grid-template-columns:minmax(140px,220px) minmax(0,1fr) 3rem;gap:.85rem;align-items:center}
+  .category-row{display:grid;grid-template-columns:minmax(140px,220px) minmax(0,1fr) 3rem;gap:.85rem;align-items:center}.category-row:hover .category-name,.category-row:focus-visible .category-name{text-decoration:underline;color:#f6d77e}
   .category-name{font-size:.88rem;color:#e4eee6}.category-track{height:17px;background:#214b2e;border:1px solid #356b43;border-radius:99px;overflow:hidden}
   .category-fill{height:100%;min-width:2px;border-radius:99px;background:linear-gradient(90deg,#b9820e,#e6a817,#f2cb5c);box-shadow:0 0 14px rgba(230,168,23,.2);transition:width .3s ease}
   .category-count{text-align:right;color:#f6d77e;font-weight:750;font-variant-numeric:tabular-nums}
@@ -38,12 +39,15 @@
   .dark-track{height:9px;background:#214b2e;border-radius:20px;overflow:hidden}.dark-fill{height:100%;min-width:2px;background:linear-gradient(90deg,#176b3a,#58a96c);border-radius:20px}.dark-count{text-align:right;color:#f6d77e;font-variant-numeric:tabular-nums}
   .mini-month-scroll{overflow-x:auto;padding-bottom:.25rem}
   .mini-month-plot{height:132px;min-width:310px;display:flex;align-items:flex-end;gap:.45rem;border-bottom:1px solid #64814d;padding:.3rem .25rem 0;background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(25% - 1px),rgba(198,221,200,.13) calc(25% - 1px),rgba(198,221,200,.13) 25%)}
-  .mini-month-column{flex:1;min-width:30px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:.25rem}.mini-month-column[hidden]{display:none}
+  .mini-month-column{flex:1;min-width:30px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:.25rem;color:inherit;text-decoration:none}.mini-month-column[hidden]{display:none}.mini-month-column:hover .mini-month-label,.mini-month-column:focus-visible .mini-month-label{text-decoration:underline;color:#f6d77e}
   .mini-month-value{font-size:.67rem;color:#f6d77e}.mini-month-bar{width:min(62%,34px);min-height:2px;background:linear-gradient(180deg,#f2cb5c,#c18a13);border-radius:4px 4px 0 0;transition:height .2s}
   .mini-month-label{color:#d2dfd5;text-align:center;font-size:.66rem;white-space:nowrap}.mini-month-label small{display:block;color:#99b09e;font-size:.58rem}
   .mini-month-footer{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-top:.65rem;color:#aec5b4;font-size:.68rem}
   .conversation-note{font-size:.85rem;background:#fff8df;border-left:4px solid #e6a817;color:#405342;padding:.75rem 1rem;border-radius:7px;margin-bottom:1rem}
   .table-wrap{overflow-x:auto}.conversation-link{white-space:nowrap}
+  .dashboard-filter{display:inline-flex;align-items:center;gap:.25rem;border:1px solid #d6e2d8;border-radius:999px;padding:.35rem .72rem;margin:0 .35rem .5rem 0;color:#145b31;background:#fff;text-decoration:none;font-size:.82rem}.dashboard-filter:hover,.dashboard-filter[aria-current="true"]{background:#e7f3e9;border-color:#79ae87}
+  .report-alert-backdrop{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:1rem;background:rgba(5,20,11,.7);backdrop-filter:blur(4px)}.report-alert-backdrop[hidden]{display:none}.report-alert{width:min(100%,540px);max-height:min(85vh,720px);overflow:auto;background:#fff;border:1px solid #dbe6dc;border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.35);padding:1.35rem;color:#173523}.report-alert-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.report-alert h2{margin:0;color:#104b2a;font-size:1.35rem}.report-alert p{margin:.5rem 0 1rem;color:#506455}.report-alert-close{width:40px;height:40px;flex:0 0 40px;border:1px solid #d6e2d8;border-radius:50%;background:#f6f8f6;color:#173523;font-size:1.35rem;cursor:pointer}.new-report-list{display:grid;gap:.65rem;margin:1rem 0}.new-report-item{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.8rem;border:1px solid #e0e9e1;border-radius:11px;background:#f7faf7}.new-report-item strong{display:block;color:#174f2d}.new-report-item span{display:block;color:#647369;font-size:.85rem;margin-top:.15rem}.new-report-item a{color:#145b31;font-weight:700;white-space:nowrap}.report-alert-actions{display:flex;justify-content:flex-end;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
+  @media(prefers-reduced-motion:reduce){.kpi-link{transition:none}}
   .channel-tag{display:inline-block;padding:.22rem .55rem;border-radius:99px;background:#e8f3e9;color:#155d31;border:1px solid #c6e0ca;font-size:.75rem;font-weight:700}
   .channel-tag.ussd{background:#fff3d1;color:#765309;border-color:#f0d88f}
   @media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.breakdown-grid{grid-template-columns:1fr}.category-row{grid-template-columns:minmax(110px,180px) minmax(0,1fr) 2.5rem}}
@@ -60,7 +64,7 @@
 
   <div class="kpi-grid" aria-label="Summary metrics">
     {% for card in card_series %}
-    <section class="kpi"><div><div class="kpi-label">{{ card.label }}</div><div class="kpi-value">{{ card.value }}</div><div class="kpi-note">{{ card.note }}</div></div><svg class="sparkline" viewBox="0 0 104 32" role="img" aria-label="{{ card.label }} monthly trend for the last six months"><polyline points="{{ card.points }}"></polyline></svg></section>
+    <a class="kpi kpi-link" href="{{ card.href }}" aria-label="{{ card.label }}: {{ card.value }}. {{ card.note }}"><div><div class="kpi-label">{{ card.label }}</div><div class="kpi-value">{{ card.value }}</div><div class="kpi-note">{{ card.note }}</div></div><svg class="sparkline" viewBox="0 0 104 32" aria-hidden="true"><polyline points="{{ card.points }}"></polyline></svg></a>
     {% endfor %}
   </div>
 
@@ -68,30 +72,31 @@
     <div class="chart-title-row"><h2 id="category-title">Reports by category</h2><span class="chart-units">Number of reports</span></div>
     {% if category_chart %}
     <div class="category-chart">
-      {% for item in category_chart %}<div class="category-row"><span class="category-name">{{ item.label }}</span><div class="category-track" role="img" aria-label="{{ item.label }}: {{ item.count }} reports"><div class="category-fill" style="width:{{ item.width }}%"></div></div><span class="category-count">{{ item.count }}</span></div>{% endfor %}
+      {% for key in categories %}{% set item = category_chart[loop.index0] %}<a class="category-row" href="{{ url_for('dashboard',category=key,_anchor='report-list') }}" style="text-decoration:none" aria-label="Show {{ item.label }} reports"><span class="category-name">{{ item.label }}</span><div class="category-track" role="img" aria-label="{{ item.label }}: {{ item.count }} reports"><div class="category-fill" style="width:{{ item.width }}%"></div></div><span class="category-count">{{ item.count }}</span></a>{% endfor %}
     </div>
     {% else %}<div class="empty-chart">No report categories to display yet.</div>{% endif %}
   </section>
 
   <div class="breakdown-grid">
     <section class="breakdown"><h3>Current report status</h3>
-      {% for item in status_chart %}<div class="dark-bar-row"><span>{{ item.label }}</span><div class="dark-track" role="img" aria-label="{{ item.label }}: {{ item.count }}"><div class="dark-fill" style="width:{{ item.width }}%;background:{% if item.label == 'Closed' %}#e6a817{% else %}#58a96c{% endif %}"></div></div><span class="dark-count">{{ item.count }}</span></div>{% endfor %}
+      {% for key in ['received','in_progress','closed'] %}{% set item = status_chart[loop.index0] %}<a class="dark-bar-row" href="{{ url_for('dashboard',status=key,_anchor='report-list') }}" style="text-decoration:none" aria-label="Show {{ item.label }} reports"><span>{{ item.label }}</span><div class="dark-track" role="img" aria-label="{{ item.label }}: {{ item.count }}"><div class="dark-fill" style="width:{{ item.width }}%;background:{% if item.label == 'Closed' %}#e6a817{% else %}#58a96c{% endif %}"></div></div><span class="dark-count">{{ item.count }}</span></a>{% endfor %}
     </section>
     <section class="breakdown"><div class="chart-title-row"><h3>Reports submitted by month</h3><label class="analytics-period" for="chart-range">Period<select id="chart-range" aria-label="Select monthly chart period"><option value="6" selected>Last 6 months</option><option value="12">Last 12 months</option><option value="all">All available</option></select></label></div>
-      <div class="mini-month-scroll"><div class="mini-month-plot" id="monthly-bars" role="img" aria-label="Reports submitted per month">
-        {% for item in month_chart %}<div class="mini-month-column" data-index="{{ item.index }}" data-count="{{ item.count }}" title="{{ item.label }} {{ item.year }}: {{ item.count }} reports"><span class="mini-month-value">{{ item.count }}</span><div class="mini-month-bar" style="height:{{ item.height }}%"></div><span class="mini-month-label">{{ item.label }}<small>{{ item.year }}</small></span></div>{% endfor %}
+      <div class="mini-month-scroll"><div class="mini-month-plot" id="monthly-bars" role="group" aria-label="Reports submitted per month">
+        {% for item in month_chart %}<a class="mini-month-column" href="{{ url_for('dashboard',month=item.key,_anchor='report-list') }}" data-index="{{ item.index }}" data-count="{{ item.count }}" title="Show reports from {{ item.label }} {{ item.year }}" aria-label="Show {{ item.count }} reports from {{ item.label }} 20{{ item.year }}"><span class="mini-month-value">{{ item.count }}</span><div class="mini-month-bar" style="height:{{ item.height }}%"></div><span class="mini-month-label">{{ item.label }}<small>{{ item.year }}</small></span></a>{% endfor %}
       </div></div>
       <div class="mini-month-footer"><span id="range-summary">Showing the last 6 months.</span><span>Reports</span></div>
     </section>
     <section class="breakdown"><h3>Reports by channel</h3>
-      {% for item in channel_chart %}<div class="dark-bar-row"><span>{{ item.label }}</span><div class="dark-track" role="img" aria-label="{{ item.label }}: {{ item.count }}"><div class="dark-fill" style="width:{{ item.width }}%;background:{% if item.label == 'USSD' %}#e6a817{% else %}#58a96c{% endif %}"></div></div><span class="dark-count">{{ item.count }}</span></div>{% endfor %}
+      {% for item in channel_chart %}<a class="dark-bar-row" href="{{ url_for('dashboard',channel=item.label|lower,_anchor='report-list') }}" style="text-decoration:none" aria-label="Show {{ item.label }} reports"><span>{{ item.label }}</span><div class="dark-track" role="img" aria-label="{{ item.label }}: {{ item.count }}"><div class="dark-fill" style="width:{{ item.width }}%;background:{% if item.label == 'USSD' %}#e6a817{% else %}#58a96c{% endif %}"></div></div><span class="dark-count">{{ item.count }}</span></a>{% endfor %}
     </section>
   </div>
 </div>
 
-<div class="card">
+<div class="card" id="report-list">
   <div class="conversation-note"><strong>Conversation access:</strong> citizens use their generated report reference and the phone number recorded with that report. Ministers and the Prime Minister reply after staff sign-in. No SMS notification is connected.</div>
   <h2>Reports and conversations</h2>
+  {% if channel_filter != 'all' or category_filter != 'all' or month_filter or conversation_filter %}<p style="color:var(--muted);margin-top:-.35rem">Filtered report list · <a href="{{ url_for('dashboard',_anchor='report-list') }}">Clear filters</a></p>{% endif %}
   <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
     {% for key,label in [('all','All'),('received','Received'),('in_progress','In Progress'),('closed','Closed')] %}<a href="{{ url_for('dashboard',status=key) }}" class="btn {% if current_filter != key %}btn-outline{% endif %}" style="padding:.4rem .9rem;font-size:.85rem">{{ label }}</a>{% endfor %}
   </div>
@@ -110,6 +115,14 @@
   {% else %}<p style="text-align:center;padding:2rem 0;color:var(--muted)">No reports in this filter yet.</p>{% endif %}
 </div>
 
+<div class="report-alert-backdrop" id="new-report-modal" hidden>
+  <section class="report-alert" role="dialog" aria-modal="true" aria-labelledby="new-report-title" aria-describedby="new-report-description" tabindex="-1">
+    <div class="report-alert-head"><div><h2 id="new-report-title">New citizen report</h2><p id="new-report-description">A report has just arrived. Review it and follow up with the citizen.</p></div><button class="report-alert-close" id="new-report-close" type="button" aria-label="Close new report alert">×</button></div>
+    <div class="new-report-list" id="new-report-items" aria-live="polite"></div>
+    <div class="report-alert-actions"><button class="btn btn-outline" id="new-report-dismiss" type="button">Dismiss</button><a class="btn" href="{{ url_for('dashboard', _anchor='report-list') }}">Open reports list</a></div>
+  </section>
+</div>
+
 <script>
 (() => {
   const selector=document.getElementById('chart-range');
@@ -125,6 +138,78 @@
     summary.textContent=mode==='all'?`Showing all ${columns.length} available months.`:`Showing the last ${mode} months.`;
   }
   selector.addEventListener('change',updateChart);updateChart();
+})();
+
+(() => {
+  const modal=document.getElementById('new-report-modal');
+  if(!modal)return;
+  const dialog=modal.querySelector('[role="dialog"]');
+  const closeButton=document.getElementById('new-report-close');
+  const dismissButton=document.getElementById('new-report-dismiss');
+  const list=document.getElementById('new-report-items');
+  const reportUrlTemplate={{ url_for('view_report', reference='__NEW_REPORT__')|tojson }};
+  const reportsApi={{ url_for('api_reports')|tojson }};
+  let latestId=Number({{ latest_report_id|int }});
+  let checking=false;
+  let previousFocus=null;
+  const pending=new Map();
+
+  function showAlert(){
+    if(!pending.size)return;
+    const reports=Array.from(pending.values());
+    document.getElementById('new-report-title').textContent=reports.length===1?'New citizen report':`${reports.length} new citizen reports`;
+    list.replaceChildren();
+    for(const report of reports){
+      const item=document.createElement('div');item.className='new-report-item';
+      const details=document.createElement('div');
+      const reference=document.createElement('strong');reference.textContent=report.reference;
+      const summary=document.createElement('span');summary.textContent=[report.category_label,report.location].filter(Boolean).join(' · ')||'A citizen submitted a report';
+      details.append(reference,summary);
+      const link=document.createElement('a');link.textContent='Review';link.href=reportUrlTemplate.replace('__NEW_REPORT__',encodeURIComponent(report.reference));
+      item.append(details,link);list.append(item);
+    }
+    if(modal.hidden){
+      previousFocus=document.activeElement;
+      modal.hidden=false;
+      closeButton.focus();
+    }
+  }
+  function hideAlert(){
+    modal.hidden=true;
+    pending.clear();
+    if(previousFocus&&typeof previousFocus.focus==='function')previousFocus.focus();
+  }
+  closeButton.addEventListener('click',hideAlert);
+  dismissButton.addEventListener('click',hideAlert);
+  modal.addEventListener('click',event=>{if(event.target===modal)hideAlert();});
+  dialog.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){event.preventDefault();hideAlert();return;}
+    if(event.key==='Tab'){
+      const focusable=Array.from(dialog.querySelectorAll('a[href],button:not([disabled])'));
+      if(!focusable.length)return;
+      const first=focusable[0],last=focusable[focusable.length-1];
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+    }
+  });
+
+  async function checkForReports(){
+    if(checking||document.hidden)return;
+    checking=true;
+    try{
+      const response=await fetch(`${reportsApi}?after_id=${latestId}`,{credentials:'same-origin',headers:{'Accept':'application/json'}});
+      if(!response.ok)return;
+      const reports=await response.json();
+      for(const report of reports){
+        const id=Number(report.id)||0;
+        if(id>latestId){latestId=id;pending.set(report.reference,report);}
+      }
+      if(pending.size)showAlert();
+    }catch(error){/* Retry on the next poll; do not interrupt dashboard use. */}
+    finally{checking=false;}
+  }
+  window.setInterval(checkForReports,15000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForReports();});
 })();
 </script>
 {% endblock %}

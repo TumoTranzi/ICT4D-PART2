@@ -299,13 +299,29 @@ def normalize_status_filter(status_value):
 @role_required("partner", "admin")
 def dashboard():
     status_filter = normalize_status_filter(request.args.get("status", "all"))
+    channel_filter = request.args.get("channel", "all")
+    if channel_filter.lower() not in ("all", "website", "ussd"):
+        channel_filter = "all"
+    category_filter = request.args.get("category", "all")
+    if category_filter not in CATEGORIES:
+        category_filter = "all"
+    month_filter = request.args.get("month", "")
+    if not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", month_filter):
+        month_filter = ""
+    conversation_filter = request.args.get("conversation") == "1"
     all_reports = store.list_reports()
-    rows = all_reports if status_filter == "all" else store.list_reports(status=status_filter)
     all_messages = store.list_messages()
     conversation_counts = {}
     for message in all_messages:
         ref = message["report_ref"]
         conversation_counts[ref] = conversation_counts.get(ref, 0) + 1
+
+    rows = [row for row in all_reports if
+            (status_filter == "all" or row.get("status") == status_filter) and
+            (channel_filter == "all" or (row.get("submission_channel") or "Website").lower() == channel_filter.lower()) and
+            (category_filter == "all" or row.get("category") == category_filter) and
+            (not month_filter or (row.get("created_at") or "").startswith(month_filter)) and
+            (not conversation_filter or conversation_counts.get(row.get("reference"), 0) > 0)]
 
     status_counts = {key: 0 for key in STATUS_LABELS}
     category_counts = {key: 0 for key in CATEGORIES}
@@ -382,10 +398,10 @@ def dashboard():
 
     spark_months = all_months[-6:]
     card_series = [
-        {"label": "Total reports", "value": len(all_reports), "note": "Reports across both channels", "points": sparkline_points(month_counts.get(key, 0) for key in spark_months)},
-        {"label": "Conversation replies", "value": message_total, "note": "Citizen and staff messages", "points": sparkline_points(month_message_counts.get(key, 0) for key in spark_months)},
-        {"label": "Website submissions", "value": channel_counts.get("Website", 0), "note": "Reports created through the website", "points": sparkline_points(month_website_counts.get(key, 0) for key in spark_months)},
-        {"label": "USSD submissions", "value": channel_counts.get("USSD", 0), "note": "Includes browser USSD demonstrations", "points": sparkline_points(month_ussd_counts.get(key, 0) for key in spark_months)},
+        {"label": "Total reports", "value": len(all_reports), "note": "Open the complete report list", "href": url_for("dashboard", _anchor="report-list"), "points": sparkline_points(month_counts.get(key, 0) for key in spark_months)},
+        {"label": "Conversation replies", "value": message_total, "note": "Open reports with conversations", "href": url_for("dashboard", conversation="1", _anchor="report-list"), "points": sparkline_points(month_message_counts.get(key, 0) for key in spark_months)},
+        {"label": "Website submissions", "value": channel_counts.get("Website", 0), "note": "Open website reports", "href": url_for("dashboard", channel="website", _anchor="report-list"), "points": sparkline_points(month_website_counts.get(key, 0) for key in spark_months)},
+        {"label": "USSD submissions", "value": channel_counts.get("USSD", 0), "note": "Open USSD reports", "href": url_for("dashboard", channel="ussd", _anchor="report-list"), "points": sparkline_points(month_ussd_counts.get(key, 0) for key in spark_months)},
     ]
 
     return render_template(
@@ -395,6 +411,9 @@ def dashboard():
         status_chart=status_chart, category_chart=category_chart,
         channel_chart=channel_chart, month_chart=month_chart,
         card_series=card_series, axis_ticks=axis_ticks,
+        latest_report_id=max((int(row.get("id") or 0) for row in all_reports), default=0),
+        channel_filter=channel_filter, category_filter=category_filter,
+        month_filter=month_filter, conversation_filter=conversation_filter,
     )
 
 @app.route("/dashboard/update/<reference>", methods=["POST"])
@@ -499,9 +518,18 @@ def conversation_messages_api(reference):
 @app.route("/api/reports")
 @role_required("partner", "admin")
 def api_reports():
-    rows = store.list_reports(limit=50)
-    fields = ("reference", "submission_channel", "category", "status", "created_at")
-    return jsonify([{key: row.get(key) for key in fields} for row in rows])
+    try:
+        after_id = max(0, int(request.args.get("after_id", "0")))
+    except ValueError:
+        after_id = 0
+    rows = [row for row in store.list_reports(limit=100) if int(row.get("id") or 0) > after_id]
+    fields = ("id", "reference", "submission_channel", "category", "location", "status", "created_at")
+    payload = []
+    for row in rows:
+        item = {key: row.get(key) for key in fields}
+        item["category_label"] = CATEGORIES.get(row.get("category"), {}).get("en", row.get("category", "Report"))
+        payload.append(item)
+    return jsonify(payload)
 
 
 @app.route("/admin", methods=["GET", "POST"])
