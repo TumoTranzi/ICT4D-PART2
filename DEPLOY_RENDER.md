@@ -18,6 +18,18 @@ TTsebisa uses SQLite by default when run locally. For the hosted demo, set `TSEB
 
 The Render start command seeds eight synthetic dashboard reports and one sample conversation only if those sample references are not already present. They use the placeholder phone `0000000000`; these are demonstration records, not real complaints or contact details.
 
+## SMS confirmations and citizen replies
+
+The app can use Africa's Talking for SMS. Its sandbox is for testing; real handset delivery requires a verified Africa's Talking account, production API key, enabled Lesotho route, sufficient SMS balance, and an approved sender ID or shortcode. Configure these in Render → **Environment**:
+
+- `AT_USERNAME`: your Africa's Talking application username (not `sandbox` for production).
+- `AT_API_KEY`: the private API key from that application.
+- `AT_SMS_ENVIRONMENT`: `production` when ready for real messages; leave `sandbox` for test mode.
+- `AT_SENDER_ID`: optional, only if Africa's Talking has approved it for your account and destination network.
+- `SMS_INBOUND_TOKEN`: a long random secret for the receive-SMS webhook.
+
+The app submits a confirmation SMS after a website or USSD report is saved. A gateway acceptance is not proof it reached the handset; carrier delivery receipts are separate. To receive citizen replies, configure the Africa's Talking inbound SMS callback to `https://YOUR_RENDER_HOST/api/sms/inbound?token=YOUR_SMS_INBOUND_TOKEN`. Citizens reply in the format `TSE-AB12 Please update me`; the number must match the phone saved with that report, and the text appears in its dashboard conversation. Two-way inbound SMS also requires a provisioned number/shortcode and provider-side callback configuration. Keep all API keys and webhook tokens private; never add them to GitHub or chat.
+
 ## Import existing local SQLite data (optional)
 
 The old Render SQLite file lived on temporary service storage and may not be available. If you have a local `tsebisa.db`, set `DATABASE_URL` in a private local `.env`, set `TSEBISA_STORAGE_BACKEND=neon`, and run a dry run first:

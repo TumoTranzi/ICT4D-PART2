@@ -5,6 +5,7 @@ import re
 import secrets
 
 from flask import Blueprint, current_app, request
+from sms_gateway import send_report_confirmation
 
 ussd_bp = Blueprint("ussd", __name__)
 
@@ -111,8 +112,15 @@ def ussd_api():
         return reply(prompt_for(lang, "Karabo ha e a nepahala. Letsetsa hape.", "Invalid response. Please dial again."), end=True)
 
     reference = save_report(category, description, location, phone, lang)
+    sms_result = send_report_confirmation(phone, reference, lang)
+    if sms_result["accepted"]:
+        sms_note = prompt_for(lang, " Tiisetso e rometswe ho SMS gateway.", " SMS confirmation submitted to the gateway.")
+    elif sms_result["status"] == "not_configured":
+        sms_note = prompt_for(lang, " SMS ha e so hokahantswe; boloka nomoro ena.", " SMS is not configured; please save this reference.")
+    else:
+        sms_note = prompt_for(lang, " SMS ha e a romelwa; boloka nomoro ena.", " SMS could not be sent; please save this reference.")
     return reply(prompt_for(
         lang,
-        f"Re a leboha. Tlaleho e amohetswe. Nomoro: {reference}",
-        f"Thank you. Your report was received. Reference: {reference}",
+        f"Re a leboha. Tlaleho e amohetswe. Nomoro: {reference}.{sms_note}",
+        f"Thank you. Your report was received. Reference: {reference}.{sms_note}",
     ), end=True)

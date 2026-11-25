@@ -8,7 +8,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
 from routes.ussd import ussd_bp
+from routes.sms import sms_bp
 from storage import create_store, DuplicateUserError
+from sms_gateway import send_report_confirmation
 import os
 import random
 import string
@@ -46,6 +48,7 @@ app.config["VOICE_UPLOAD_FOLDER"] = VOICE_UPLOAD_FOLDER
 app.config["PHOTO_UPLOAD_FOLDER"] = PHOTO_UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 app.register_blueprint(ussd_bp)
+app.register_blueprint(sms_bp)
 
 ROLES = ("citizen", "partner", "admin")
 ROLE_LABELS = {"citizen": "Citizen", "partner": "Minister", "admin": "Prime Minister"}
@@ -285,8 +288,10 @@ def report_details():
         else:
             raise RuntimeError("Could not create a unique report reference")
 
+        sms_result = send_report_confirmation(phone, ref, lang)
+
         session.clear()
-        return render_template("report_success.html", ref=ref, lang=lang)
+        return render_template("report_success.html", ref=ref, lang=lang, sms_result=sms_result)
 
     return render_template("report_details.html", lang=lang, category=category, categories=CATEGORIES)
 

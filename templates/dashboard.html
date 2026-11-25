@@ -94,7 +94,7 @@
 </div>
 
 <div class="card" id="report-list">
-  <div class="conversation-note"><strong>Conversation access:</strong> citizens use their generated report reference and the phone number recorded with that report. Ministers and the Prime Minister reply after staff sign-in. No SMS notification is connected.</div>
+  <div class="conversation-note"><strong>Conversation access:</strong> citizens use their generated report reference and the phone number recorded with that report. Ministers and the Prime Minister reply after staff sign-in. SMS delivery and inbound replies require an active, configured gateway account.</div>
   <h2>Reports and conversations</h2>
   {% if channel_filter != 'all' or category_filter != 'all' or month_filter or conversation_filter %}<p style="color:var(--muted);margin-top:-.35rem">Filtered report list · <a href="{{ url_for('dashboard',_anchor='report-list') }}">Clear filters</a></p>{% endif %}
   <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">

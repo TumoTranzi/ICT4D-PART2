@@ -15,9 +15,13 @@
   </div>
 
   {% if lang == "st" %}
-    <p>SMS ha e so hokahane. Sebelisa nomoro ena le nomoro ea mohala eo u e kentseng ho araba kapa ho botsa ka tsoelo-pele.</p>
+    {% if sms_result and sms_result.accepted %}<p>Tiisetso ya SMS e rometswe ho SMS gateway. Boloka nomoro ena ho araba kapa ho botsa ka tlaleho.</p>
+    {% elif sms_result and sms_result.status == "not_configured" %}<p>SMS ha e so hokahantswe. Boloka nomoro ena ho araba kapa ho botsa ka tlaleho.</p>
+    {% else %}<p>SMS ha e a romelwa. Boloka nomoro ena ho araba kapa ho botsa ka tlaleho.</p>{% endif %}
   {% else %}
-    <p>SMS is not connected yet. Use this reference and the phone number you entered to reply or ask for an update.</p>
+    {% if sms_result and sms_result.accepted %}<p>SMS confirmation was accepted by the gateway for processing. Delivery to the handset depends on the carrier. Keep this reference to reply or ask for an update.</p>
+    {% elif sms_result and sms_result.status == "not_configured" %}<p>SMS is not configured yet. Keep this reference to reply or ask for an update.</p>
+    {% else %}<p>The SMS confirmation could not be sent. Keep this reference to reply or ask for an update.</p>{% endif %}
   {% endif %}
 
   <a href="{{ url_for('conversation_lookup', reference=ref) }}" class="btn btn-outline" style="margin-top:0.5rem;">
