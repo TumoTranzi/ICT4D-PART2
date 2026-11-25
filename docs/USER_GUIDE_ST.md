@@ -3,7 +3,7 @@
 ## Bakeng sa Baahi
 
 ### Tsebisa ke eng?
-Tsebisa ke mokhoa o bonolo oa ho tsebisa ofisi ea sebakeng ka mathata a metsi, litsela, ho bokella lithoto, mabone a seterata le lits’ebeletso tse ding. U fumana nomoro ea reference e le hore u tsebe ho latela.
+Tsebisa ke mokhoa o bonolo oa ho tsebisa ofisi ea sebakeng ka mathata a metsi, litsela, ho bokella lithoele, mabone a seterata le lits’ebeletso tse ling. U fumana nomoro ea reference e le hore u tsebe ho latela.
 
 ### Mokhoa oa ho tlaleha bothata
 1. Bula leqephe la Tsebisa (kapa u letse khoutu ea USSD ha e se e le teng).

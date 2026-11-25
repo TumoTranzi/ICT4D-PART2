@@ -11,9 +11,9 @@ ussd_bp = Blueprint("ussd", __name__)
 CATEGORY_OPTIONS = {
     "1": ("water", "Metsi / Water"),
     "2": ("roads", "Litsela / Roads"),
-    "3": ("refuse", "Lithoto / Refuse"),
+    "3": ("refuse", "Lithoele / Refuse"),
     "4": ("lights", "Mabone / Street lights"),
-    "5": ("other", "Tse ding / Other"),
+    "5": ("other", "Tse ling / Other"),
 }
 
 
@@ -28,7 +28,7 @@ def prompt_language():
 
 def prompt_category(lang):
     if lang == "st":
-        return "Khetha bothata:\n1. Metsi\n2. Litsela\n3. Lithoto\n4. Mabone\n5. Tse ding"
+        return "Khetha bothata:\n1. Metsi\n2. Litsela\n3. Lithoele\n4. Mabone\n5. Tse ling"
     return "Choose a category:\n1. Water\n2. Roads\n3. Refuse\n4. Street lights\n5. Other"
 
 

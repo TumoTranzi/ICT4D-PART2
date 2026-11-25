@@ -132,9 +132,9 @@ def report_phone_matches(stored_phone, entered_phone):
 CATEGORIES = {
     "water": {"st": "Metsi (pompo / pipe e robehileng)", "en": "Water (broken pump / pipe)"},
     "roads": {"st": "Litsela (mekoallo / mekoti)", "en": "Roads (potholes / damage)"},
-    "refuse": {"st": "Lithoto (ho bokella)", "en": "Refuse collection"},
+    "refuse": {"st": "Lithoele (ho bokella)", "en": "Refuse collection"},
     "lights": {"st": "Mabone a seterata", "en": "Street lights"},
-    "other": {"st": "Tse ding", "en": "Other"},
+    "other": {"st": "Tse ling", "en": "Other"},
 }
 
 CATEGORY_ICONS = {

@@ -41,7 +41,7 @@
     </div>
 
     <div style="margin:0.25rem 0 1rem;">
-      <label>{% if lang == "st" %}Kenya setshwantsho{% else %}Add a photo{% endif %}</label>
+      <label>{% if lang == "st" %}Kenya sets'oantso{% else %}Add a photo{% endif %}</label>
       <div style="display:flex;gap:0.65rem;flex-wrap:wrap;">
         <button type="button" id="camera-button" class="btn btn-outline"
           style="display:flex;align-items:center;justify-content:center;gap:0.45rem;flex:1;">
@@ -49,7 +49,7 @@
             <path d="M4 7h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"></path>
             <circle cx="12" cy="13" r="3"></circle>
           </svg>
-          {% if lang == "st" %}Nka setshwantsho{% else %}Take photo{% endif %}
+          {% if lang == "st" %}Nka sets'oantso{% else %}Take photo{% endif %}
         </button>
         <button type="button" id="gallery-button" class="btn btn-outline"
           style="display:flex;align-items:center;justify-content:center;gap:0.45rem;flex:1;">
@@ -58,24 +58,24 @@
             <circle cx="8.5" cy="8.5" r="1.5"></circle>
             <path d="m21 15-5-5L5 21"></path>
           </svg>
-          {% if lang == "st" %}Kgetha setshwantsho{% else %}Choose photo{% endif %}
+          {% if lang == "st" %}Kgetha sets'oantso{% else %}Choose photo{% endif %}
         </button>
       </div>
       <input type="file" id="camera-note" accept="image/*" capture="environment" hidden>
       <input type="file" id="photo-note" name="photo" accept="image/jpeg,image/png,image/webp,image/heic" hidden>
       <div id="photo-preview-wrap" style="display:none;margin-top:0.65rem;">
-        <img id="photo-preview" alt="{% if lang == 'st' %}Setshwantsho se kgethilweng{% else %}Selected problem photo{% endif %}"
+        <img id="photo-preview" alt="{% if lang == 'st' %}Sets'oantso se kgethilweng{% else %}Selected problem photo{% endif %}"
           style="display:block;width:100%;max-height:280px;object-fit:cover;border-radius:10px;border:1px solid var(--border);">
         <button type="button" id="remove-photo" class="btn btn-outline" style="margin-top:0.5rem;width:100%;">
-          {% if lang == "st" %}Tlosa setshwantsho{% else %}Remove photo{% endif %}
+          {% if lang == "st" %}Tlosa sets'oantso{% else %}Remove photo{% endif %}
         </button>
       </div>
     </div>
     <div id="camera-modal" role="dialog" aria-modal="true"
-      aria-label="{% if lang == 'st' %}Nka setshwantsho{% else %}Take a photo{% endif %}"
+      aria-label="{% if lang == 'st' %}Nka sets'oantso{% else %}Take a photo{% endif %}"
       style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.78);padding:1rem;align-items:center;justify-content:center;">
       <div style="width:min(560px,100%);background:#fff;border-radius:14px;padding:1rem;">
-        <h2 style="margin-bottom:0.75rem;">{% if lang == "st" %}Nka setshwantsho{% else %}Take a photo{% endif %}</h2>
+        <h2 style="margin-bottom:0.75rem;">{% if lang == "st" %}Nka sets'oantso{% else %}Take a photo{% endif %}</h2>
         <video id="camera-live" autoplay playsinline muted
           style="display:block;width:100%;max-height:55vh;object-fit:cover;background:#111;border-radius:10px;"></video>
         <canvas id="camera-canvas" hidden></canvas>
@@ -156,7 +156,7 @@
     if (cameraLive.videoWidth > 0 && cameraLive.videoHeight > 0) {
       cameraReady = true;
       capturePhoto.disabled = false;
-      cameraStatus.textContent = "{{ 'Kamera e lokile. Tobetsa ho nka setshwantsho.' if lang == 'st' else 'Camera ready. Tap to take the photo.' }}";
+      cameraStatus.textContent = "{{ 'Kamera e lokile. Tobetsa ho nka sets\'oantso.' if lang == 'st' else 'Camera ready. Tap to take the photo.' }}";
     }
   }
 
@@ -198,11 +198,11 @@
       await cameraLive.play().catch(function () {});
       markCameraReady();
     } catch (error) {
-      let message = "{{ 'Kamera ha e fumanehe. Leka kamera ya mohala kapa kgetha setshwantsho.' if lang == 'st' else 'Camera could not open. Try the device camera or choose a photo.' }}";
+      let message = "{{ 'Kamera ha e fumanehe. Leka kamera ya mohala kapa kgetha sets\'oantso.' if lang == 'st' else 'Camera could not open. Try the device camera or choose a photo.' }}";
       if (error && error.name === "NotAllowedError") {
         message = "{{ 'Kamohelo ya kamera e hanetswe. Dumella kamera dibrowser setting.' if lang == 'st' else 'Camera permission was denied. Allow camera access in browser settings.' }}";
       } else if (error && error.name === "NotFoundError") {
-        message = "{{ 'Ha ho kamera e fumanoang. Kgetha setshwantsho ho tsoa sesebelisoa.' if lang == 'st' else 'No camera was found. Choose a photo from your device.' }}";
+        message = "{{ 'Ha ho kamera e fumanoang. Kgetha sets\'oantso ho tsoa sesebelisoa.' if lang == 'st' else 'No camera was found. Choose a photo from your device.' }}";
       } else if (error && error.name === "NotReadableError") {
         message = "{{ 'Kamera e sebediswa ke app e nngwe. Koala app eo o leke hape.' if lang == 'st' else 'The camera is being used by another app. Close it and try again.' }}";
       }
@@ -325,7 +325,7 @@
   form.addEventListener("submit", function (event) {
     if (!description.value.trim() && fileInput.files.length === 0 && photoInput.files.length === 0) {
       event.preventDefault();
-      alert("{{ 'Ka kopo ngola, rekota, kapa kenya setshwantsho sa bothata.' if lang == 'st' else 'Please type a description, record a voice note, or add a photo.' }}");
+      alert("{{ 'Ka kopo ngola, rekota, kapa kenya sets\'oantso sa bothata.' if lang == 'st' else 'Please type a description, record a voice note, or add a photo.' }}");
     }
   });
 })();
