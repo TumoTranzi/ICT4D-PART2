@@ -1,6 +1,6 @@
 # TTsebisa
 
-A fresh, runnable Tsebisa project with the website, shared SQLite report database, administration dashboard, and browser-based feature-phone USSD simulator.
+A fresh, runnable Tsebisa project with the website, dashboard, browser-based feature-phone USSD simulator, and selectable SQLite or Neon Postgres storage.
 
 ## Run on Windows
 
@@ -19,6 +19,7 @@ Select **Phone** in the left navigation. Press `*123#`, choose **OK**, and follo
 - Sesotho and English website reporting
 - Browser-based phone keypad and USSD conversation
 - Shared SQLite reports for website and simulator submissions
+- Optional Neon Postgres backend for persistent hosted reports, accounts and conversations
 - Minister/Prime Minister dashboard with Tsebisa green-and-gold report charts and status updates
 - Reference-based conversations between citizens and staff
 - Clearly labelled sample reports for the demo dashboard (`python seed_demo_reports.py`)
@@ -31,3 +32,5 @@ The Phone page simulates USSD in the browser. A real carrier USSD code, network 
 ## Public hosting
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for the three-week demo deployment notes. Production mode requires a private `.env` with a fresh secret key and admin password. Do not upload a local database, voice notes, photos, or `.venv` to a public code repository.
+
+For the Render + Neon setup and optional SQLite import, see [DEPLOY_RENDER.md](DEPLOY_RENDER.md).

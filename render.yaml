@@ -4,13 +4,17 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: 'python -c "import app; import seed_demo_reports" && gunicorn app:app'
+    startCommand: 'python -c "import app; from seed_demo_reports import seed; seed()" && gunicorn app:app'
     healthCheckPath: /
     envVars:
       - key: TSEBISA_ENV
         value: production
       - key: TSEBISA_DATA_DIR
         value: /tmp/ttsebisa-data
+      - key: TSEBISA_STORAGE_BACKEND
+        value: neon
+      - key: DATABASE_URL
+        sync: false
       - key: TSEBISA_SECRET_KEY
         generateValue: true
       - key: TSEBISA_ADMIN_PASSWORD

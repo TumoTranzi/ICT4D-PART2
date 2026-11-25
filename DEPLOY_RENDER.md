@@ -1,23 +1,41 @@
-# Free Render demo deployment
+# Render + Neon demo deployment
 
-This configuration deploys TTsebisa on Render's free web-service plan. It does not require paid compute or a persistent disk, and it does not change the existing PythonAnywhere app.
+TTsebisa uses SQLite by default when run locally. For the hosted demo, set `TSEBISA_STORAGE_BACKEND=neon` and connect the Neon Postgres database using the private `DATABASE_URL` connection string. This keeps reports, accounts, and conversation messages beyond Render restarts.
 
-## Free-plan limits to understand
+## Configure Neon
 
-- Render may spin a free service down after 15 minutes without traffic; the next visit can take about a minute to wake.
-- This app uses SQLite and stores uploads on the service filesystem. On the free plan, local SQLite data, photos and voice notes can be lost when Render restarts, spins down or redeploys the service.
-- Use this for a three-week demonstration with test data only. Download anything you need to keep before a redeploy or restart. Do not collect real citizen case data on this temporary setup.
-- The Render start command adds eight synthetic dashboard reports and one sample three-role conversation when absent. Use reference `TSE-D001` and placeholder phone `0000000000` to open the sample citizen thread. These are demonstration records, not real complaints or contact details.
-- This deployment gives the website and browser USSD simulator a public URL. It does not provide a carrier short code or outbound SMS.
+1. In the Neon project shown in your screenshot, open **Postgres database → Connect**.
+2. Select the `production` branch and database, then copy the connection string. Keep it private; it contains the database password.
+3. Neon’s dashboard shows this project on its Free plan. Free-plan quotas and availability can change, so check the project’s **Usage** page. Neon says Free projects have a monthly compute allowance and storage limit; the database may suspend while idle.
 
-Render documents these limits in its [free-plan guide](https://render.com/docs/free).
+## Configure Render
 
-## Deploy
+1. In Render, open the existing `ttsebisa` web service and choose **Environment**.
+2. Add `TSEBISA_STORAGE_BACKEND` with value `neon`.
+3. Add `DATABASE_URL` with the Neon connection string. Do not add the connection string to GitHub or paste it into chat.
+4. Save and deploy the latest `main` commit. The updated app creates the required tables on its first start.
+5. Open the service URL and submit a report. In Neon, open **Postgres database → SQL Editor** and run `SELECT reference, submission_channel, category, status FROM reports ORDER BY created_at DESC;` to see stored reports.
 
-1. Keep this project in the private GitHub repository `TumoTranzi/ICT4D-PART2` on branch `main`.
-2. In Render, select **New → Blueprint** and connect that repository. The Blueprint file is `render.yaml` at the repository root.
-3. Provide a unique value for `TSEBISA_ADMIN_PASSWORD`. Render generates `TSEBISA_SECRET_KEY`.
-4. Confirm the web service plan is **Free**, and do not add a disk or select a paid plan.
-5. Deploy. Open the `onrender.com` URL on the service page. The simulator is at `/ussd-simulator`; the Prime Minister account signs in at `/login` with username `admin` and the password entered during setup. Create Minister accounts from the Prime Minister dashboard at `/admin`.
+The Render start command seeds eight synthetic dashboard reports and one sample conversation only if those sample references are not already present. They use the placeholder phone `0000000000`; these are demonstration records, not real complaints or contact details.
 
-If Render still asks for payment details, cancel that flow. Confirm the latest commit on GitHub includes `plan: free` in `render.yaml`, then create or sync the Blueprint again.
+## Import existing local SQLite data (optional)
+
+The old Render SQLite file lived on temporary service storage and may not be available. If you have a local `tsebisa.db`, set `DATABASE_URL` in a private local `.env`, set `TSEBISA_STORAGE_BACKEND=neon`, and run a dry run first:
+
+```powershell
+python migrate_sqlite_to_neon.py
+```
+
+If the record counts look right, run:
+
+```powershell
+python migrate_sqlite_to_neon.py --apply
+```
+
+The migration is additive and skips records that already exist. Back up the SQLite file before importing. Uploaded photos and voice notes remain local files and are not migrated by this script.
+
+## Costs and limits
+
+Neon and Render are separate services with separate free-plan limits. Neon Free currently includes no-cost compute and database storage within its published quotas; exceeding limits or selecting a paid plan may incur charges. This does not make the Render hosting plan paid. [Neon pricing](https://neon.com/pricing)
+
+Render’s free web service may spin down after inactivity, which can delay the next request. The app provides a website and browser USSD simulator, not a carrier short code or outbound SMS.

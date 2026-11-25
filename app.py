@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
 from routes.ussd import ussd_bp
-import sqlite3
+from storage import create_store, DuplicateUserError
 import os
 import random
 import string
@@ -71,87 +71,30 @@ def role_required(*allowed_roles):
 # Database helpers
 # -------------------------------------------------
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return store
 
 def init_db():
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            reference TEXT UNIQUE NOT NULL,
-            submission_channel TEXT DEFAULT 'Website',
-            category TEXT NOT NULL,
-            description TEXT,
-            location TEXT,
-            phone TEXT,
-            language TEXT DEFAULT 'st',
-            status TEXT DEFAULT 'received',
-            created_at TEXT NOT NULL,
-            updated_at TEXT
-        )
-    """)
-    # Older pilot databases may predate the channel column. Add it in place.
-    columns = {row[1] for row in c.execute("PRAGMA table_info(reports)").fetchall()}
-    if "submission_channel" not in columns:
-        c.execute("ALTER TABLE reports ADD COLUMN submission_channel TEXT DEFAULT 'Website'")
-    if "voice_note" not in columns:
-        c.execute("ALTER TABLE reports ADD COLUMN voice_note TEXT")
-    if "photo" not in columns:
-        c.execute("ALTER TABLE reports ADD COLUMN photo TEXT")
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS feedback_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            report_ref TEXT,
-            note TEXT,
-            created_at TEXT
-        )
-    """)
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS conversations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            report_ref TEXT NOT NULL,
-            sender_role TEXT NOT NULL,
-            sender_name TEXT NOT NULL,
-            message TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            FOREIGN KEY (report_ref) REFERENCES reports(reference)
-        )
-    """)
-    c.execute("CREATE INDEX IF NOT EXISTS idx_conversations_report_ref ON conversations(report_ref, id)")
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            role TEXT NOT NULL,
-            display_name TEXT
-        )
-    """)
-    # SQLite may have accepted a malformed pilot schema if one existed.
-    user_columns = {row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()}
-    if "display_name" not in user_columns:
-        c.execute("ALTER TABLE users ADD COLUMN display_name TEXT")
+    store.initialize()
 
     default_users = (
         ("partner", os.environ.get("TSEBISA_PARTNER_PASSWORD") or (None if IS_PRODUCTION else "partner123"), "partner", "Minister"),
         ("admin", os.environ.get("TSEBISA_ADMIN_PASSWORD") or (None if IS_PRODUCTION else "admin123"), "admin", "Prime Minister"),
     )
-    c.execute("DELETE FROM users WHERE role=?", ("citizen",))
     for username, password, role, display_name in default_users:
         if not password:
             continue
-        if not c.execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone():
-            c.execute(
-                "INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)",
-                (username, generate_password_hash(password), role, display_name),
-            )
-    c.execute("UPDATE users SET display_name='Prime Minister' WHERE username='admin' AND display_name='System Administrator'")
-    c.execute("UPDATE users SET display_name='Minister' WHERE username='partner' AND display_name='Community Partner'")
-    conn.commit()
-    conn.close()
+        if not store.get_user(username):
+            store.create_user({"username": username, "password_hash": generate_password_hash(password),
+                               "role": role, "display_name": display_name})
+    for username, label, old_label in (("admin", "Prime Minister", "System Administrator"), ("partner", "Minister", "Community Partner")):
+        user = store.get_user(username)
+        if user and user.get("display_name") == old_label:
+            store.update_user_display_name(username, label)
+
+
+STORAGE_BACKEND = os.environ.get("TSEBISA_STORAGE_BACKEND", "sqlite").strip().lower()
+store = create_store(STORAGE_BACKEND, DB_PATH, os.environ.get("DATABASE_URL"))
+app.extensions["tsebisa_store"] = store
 
 def generate_reference():
     code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
@@ -221,12 +164,7 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-        conn = get_db()
-        user = conn.execute(
-            "SELECT * FROM users WHERE username=?",
-            (username,),
-        ).fetchone()
-        conn.close()
+        user = store.get_user(username)
         if user and user["role"] in ("partner", "admin") and check_password_hash(user["password_hash"], password):
             session["role"] = user["role"]
             session["username"] = user["username"]
@@ -333,16 +271,19 @@ def report_details():
             flash("Add a description, voice note or photo.", "error")
             return redirect(url_for("report_details"))
 
-        ref = generate_reference()
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
-
-        conn = get_db()
-        conn.execute(
-            "INSERT INTO reports (reference, submission_channel, category, description, location, phone, language, status, created_at, voice_note, photo) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-            (ref, 'Website', category, description, location, phone, lang, "received", now, voice_filename, photo_filename)
-        )
-        conn.commit()
-        conn.close()
+        for _ in range(10):
+            ref = generate_reference()
+            saved = store.create_report({
+                "reference": ref, "submission_channel": "Website", "category": category,
+                "description": description, "location": location, "phone": phone,
+                "language": lang, "status": "received", "created_at": now,
+                "voice_note": voice_filename, "photo": photo_filename,
+            })
+            if saved:
+                break
+        else:
+            raise RuntimeError("Could not create a unique report reference")
 
         session.clear()
         return render_template("report_success.html", ref=ref, lang=lang)
@@ -358,15 +299,13 @@ def normalize_status_filter(status_value):
 @role_required("partner", "admin")
 def dashboard():
     status_filter = normalize_status_filter(request.args.get("status", "all"))
-    conn = get_db()
-    all_reports = conn.execute("SELECT reference, submission_channel, category, status, created_at FROM reports").fetchall()
-    if status_filter == "all":
-        rows = conn.execute("SELECT * FROM reports ORDER BY created_at DESC").fetchall()
-    else:
-        rows = conn.execute("SELECT * FROM reports WHERE status=? ORDER BY created_at DESC", (status_filter,)).fetchall()
-    message_rows = conn.execute("SELECT report_ref, COUNT(*) AS total FROM conversations GROUP BY report_ref").fetchall()
-    conversation_counts = {row["report_ref"]: row["total"] for row in message_rows}
-    conn.close()
+    all_reports = store.list_reports()
+    rows = all_reports if status_filter == "all" else store.list_reports(status=status_filter)
+    all_messages = store.list_messages()
+    conversation_counts = {}
+    for message in all_messages:
+        ref = message["report_ref"]
+        conversation_counts[ref] = conversation_counts.get(ref, 0) + 1
 
     status_counts = {key: 0 for key in STATUS_LABELS}
     category_counts = {key: 0 for key in CATEGORIES}
@@ -386,15 +325,10 @@ def dashboard():
             target = month_ussd_counts if channel.lower() == "ussd" else month_website_counts
             target[month] = target.get(month, 0) + 1
 
-    conn = get_db()
-    reply_month_rows = conn.execute(
-        "SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS total "
-        "FROM conversations WHERE sender_role IN ('citizen', 'partner', 'admin') GROUP BY month"
-    ).fetchall()
-    conn.close()
-    for row in reply_month_rows:
-        if row["month"]:
-            month_message_counts[row["month"]] = row["total"]
+    for row in all_messages:
+        month = (row.get("created_at") or "")[:7]
+        if month and row.get("sender_role") in ("citizen", "partner", "admin"):
+            month_message_counts[month] = month_message_counts.get(month, 0) + 1
     message_total = sum(month_message_counts.values())
 
     status_max = max(status_counts.values(), default=0) or 1
@@ -470,18 +404,12 @@ def update_status(reference):
     current_filter = normalize_status_filter(request.form.get("current_filter") or request.args.get("status") or "all")
     if new_status in STATUS_LABELS:
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        conn = get_db()
-        report = conn.execute("SELECT status FROM reports WHERE reference=?", (reference,)).fetchone()
-        if report:
-            conn.execute("UPDATE reports SET status=?, updated_at=? WHERE reference=?", (new_status, now, reference))
-            if report["status"] != new_status:
+        previous_status = store.update_report_status(reference, new_status, now)
+        if previous_status is not None:
+            if previous_status != new_status:
                 label = STATUS_LABELS[new_status]["en"]
-                conn.execute(
-                    "INSERT INTO conversations (report_ref, sender_role, sender_name, message, created_at) VALUES (?, 'system', 'Tsebisa status update', ?, ?)",
-                    (reference, f"Report status changed to: {label}.", now),
-                )
-            conn.commit()
-        conn.close()
+                store.add_message({"report_ref": reference, "sender_role": "system", "sender_name": "Tsebisa status update",
+                                   "message": f"Report status changed to: {label}.", "created_at": now})
         flash(f"Report {reference} updated to {new_status}", "success")
     return redirect(url_for("dashboard", status=current_filter))
 
@@ -489,10 +417,8 @@ def update_status(reference):
 @role_required("partner", "admin")
 def view_report(reference):
     current_filter = normalize_status_filter(request.args.get("status", "all"))
-    conn = get_db()
-    report = conn.execute("SELECT * FROM reports WHERE reference=?", (reference,)).fetchone()
-    message_count = conn.execute("SELECT COUNT(*) FROM conversations WHERE report_ref=?", (reference,)).fetchone()[0]
-    conn.close()
+    report = store.get_report(reference)
+    message_count = len(store.list_messages(reference))
     if not report:
         return "Report not found", 404
     return render_template("report_view.html", report=report, categories=CATEGORIES, status_labels=STATUS_LABELS, current_filter=current_filter, message_count=message_count)
@@ -504,13 +430,9 @@ def conversation_lookup():
     report = None
     messages = []
     if reference:
-        conn = get_db()
-        report = conn.execute("SELECT reference, category, description, location, status, created_at FROM reports WHERE reference=?", (reference,)).fetchone()
-        conn.close()
+        report = store.get_report(reference, ("reference", "category", "description", "location", "status", "created_at"))
         if report and can_view_conversation(reference):
-            conn = get_db()
-            messages = conn.execute("SELECT sender_role, sender_name, message, created_at FROM conversations WHERE report_ref=? ORDER BY id", (reference,)).fetchall()
-            conn.close()
+            messages = store.list_messages(reference)
     return render_template(
         "conversation.html", reference=reference, report=report, messages=messages,
         authenticated=bool(report and can_view_conversation(reference)), csrf_token=chat_csrf_token(),
@@ -525,9 +447,7 @@ def conversation_access():
     if not chat_csrf_valid(request.form.get("csrf_token")):
         flash("Please refresh the page and try again.", "error")
         return redirect(url_for("conversation_lookup", reference=reference))
-    conn = get_db()
-    report = conn.execute("SELECT reference, phone FROM reports WHERE reference=?", (reference,)).fetchone()
-    conn.close()
+    report = store.get_report(reference, ("reference", "phone"))
     if not report or not report_phone_matches(report["phone"], phone):
         flash("We could not verify that report reference and phone number.", "error")
         return redirect(url_for("conversation_lookup", reference=reference))
@@ -557,17 +477,11 @@ def conversation_reply(reference):
         sender_role = "citizen"
         sender_name = "Citizen"
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    conn = get_db()
-    exists = conn.execute("SELECT 1 FROM reports WHERE reference=?", (reference,)).fetchone()
+    exists = store.get_report(reference, ("reference",))
     if not exists:
-        conn.close()
         return "Report not found", 404
-    conn.execute(
-        "INSERT INTO conversations (report_ref, sender_role, sender_name, message, created_at) VALUES (?, ?, ?, ?, ?)",
-        (reference, sender_role, sender_name, message, now),
-    )
-    conn.commit()
-    conn.close()
+    store.add_message({"report_ref": reference, "sender_role": sender_role, "sender_name": sender_name,
+                       "message": message, "created_at": now})
     return redirect(url_for("conversation_lookup", reference=reference))
 
 
@@ -576,28 +490,23 @@ def conversation_messages_api(reference):
     reference = reference.strip().upper()
     if not can_view_conversation(reference):
         return jsonify({"error": "Verify the report reference and phone number to view this conversation."}), 403
-    conn = get_db()
-    exists = conn.execute("SELECT 1 FROM reports WHERE reference=?", (reference,)).fetchone()
+    exists = store.get_report(reference, ("reference",))
     if not exists:
-        conn.close()
         return jsonify({"error": "Report not found."}), 404
-    rows = conn.execute("SELECT sender_role, sender_name, message, created_at FROM conversations WHERE report_ref=? ORDER BY id", (reference,)).fetchall()
-    conn.close()
-    return jsonify([dict(row) for row in rows])
+    rows = store.list_messages(reference)
+    return jsonify([{key: row.get(key) for key in ("sender_role", "sender_name", "message", "created_at")} for row in rows])
 
 @app.route("/api/reports")
 @role_required("partner", "admin")
 def api_reports():
-    conn = get_db()
-    rows = conn.execute("SELECT reference, submission_channel, category, status, created_at FROM reports ORDER BY created_at DESC LIMIT 50").fetchall()
-    conn.close()
-    return jsonify([dict(r) for r in rows])
+    rows = store.list_reports(limit=50)
+    fields = ("reference", "submission_channel", "category", "status", "created_at")
+    return jsonify([{key: row.get(key) for key in fields} for row in rows])
 
 
 @app.route("/admin", methods=["GET", "POST"])
 @role_required("admin")
 def admin_panel():
-    conn = get_db()
     if request.method == "POST":
         action = request.form.get("action")
         if action == "create":
@@ -607,30 +516,20 @@ def admin_panel():
             display_name = request.form.get("display_name", "").strip()
             if username and password and role in ROLES and role != "citizen":
                 try:
-                    conn.execute(
-                        "INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)",
-                        (username, generate_password_hash(password), role, display_name or username),
-                    )
-                    conn.commit()
+                    store.create_user({"username": username, "password_hash": generate_password_hash(password),
+                                       "role": role, "display_name": display_name or username})
                     flash("Account created.", "success")
-                except sqlite3.IntegrityError:
+                except DuplicateUserError:
                     flash("That username already exists.", "error")
             else:
                 flash("Enter a username, password and valid staff role.", "error")
         elif action == "delete":
             user_id = request.form.get("user_id")
-            conn.execute(
-                "DELETE FROM users WHERE id=? AND username<>? AND role<>?",
-                (user_id, "admin", "admin"),
-            )
-            conn.commit()
+            store.delete_user(user_id)
             flash("Account deleted.", "success")
 
-    users = conn.execute(
-        "SELECT id, username, role, display_name FROM users ORDER BY role, username"
-    ).fetchall()
-    report_count = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
-    conn.close()
+    users = store.list_users()
+    report_count = store.count_reports()
     return render_template(
         "admin.html",
         users=users,

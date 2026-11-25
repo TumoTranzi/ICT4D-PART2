@@ -3,7 +3,6 @@
 from datetime import datetime
 import re
 import secrets
-import sqlite3
 
 from flask import Blueprint, current_app, request
 
@@ -47,28 +46,18 @@ def valid_phone(value):
 
 
 def save_report(category, description, location, phone, lang):
-    db_path = current_app.config["TSEBISA_DB_PATH"]
+    store = current_app.extensions["tsebisa_store"]
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    conn = sqlite3.connect(db_path)
-    try:
-        for _ in range(10):
-            reference = "TSE-" + secrets.token_hex(2).upper()
-            try:
-                conn.execute(
-                    """INSERT INTO reports
-                       (reference, submission_channel, category, description, location,
-                        phone, language, status, created_at)
-                       VALUES (?, 'USSD', ?, ?, ?, ?, ?, 'received', ?)""",
-                    (reference, category, description, location, phone, lang, now),
-                )
-                conn.commit()
-                return reference
-            except sqlite3.IntegrityError:
-                # A short reference can collide; generate another before giving up.
-                conn.rollback()
-        raise RuntimeError("Could not create a unique report reference")
-    finally:
-        conn.close()
+    for _ in range(10):
+        reference = "TSE-" + secrets.token_hex(2).upper()
+        if store.create_report({
+            "reference": reference, "submission_channel": "USSD", "category": category,
+            "description": description, "location": location, "phone": phone,
+            "language": lang, "status": "received", "created_at": now,
+            "voice_note": None, "photo": None,
+        }):
+            return reference
+    raise RuntimeError("Could not create a unique report reference")
 
 
 @ussd_bp.route("/api/ussd", methods=["POST"])
